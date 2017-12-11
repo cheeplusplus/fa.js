@@ -1,0 +1,29 @@
+{
+    "name": "fa.js",
+    "version": "0.1.0",
+    "description": "FurAffinity interface for Javascript",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AndrewNeo/fa.js.git"
+    },
+    "main": "build/index.js",
+    "types": "build/index.d.ts",
+    "author": "AndrewNeo <andrew@andrewneo.com>",
+    "license": "MIT",
+    "scripts": {
+        "prepublishOnly": "npm run build",
+        "build": "tsc -p tsconfig.json",
+        "lint": "tslint --project tsconfig.json"
+    },
+    "devDependencies": {
+        "@types/cheerio": "^0.22.6",
+        "@types/superagent": "^3.5.6",
+        "tslint": "^5.8.0",
+        "tslint-language-service": "^0.9.7",
+        "typescript": "^2.5.3"
+    },
+    "dependencies": {
+        "scrape-it": "^3.3.3",
+        "superagent": "^3.7.0"
+    }
+}
