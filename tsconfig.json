@@ -10,13 +10,7 @@
         "declaration": true,
         "inlineSourceMap": true,
         "outDir": "build",
-        "baseUrl": ".",
-        "paths": {
-            "*": [
-                "node_modules/*",
-                "src/types/*"
-            ]
-        }
+        "baseUrl": "."
     },
     "include": [
         "src/**/*"
