@@ -169,6 +169,10 @@ export class FurAffinityClient {
                 "how": "html"
             },
             "when": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(1) > td.alt1 > table > tbody > tr > td > span",
+            "upload_date": {
+                "selector": "#page-submission td.stats-container span.popup_date",
+                "attr": "title"
+            },
             "keywords": {
                 "listItem": "#keywords > a",
                 "data": {
@@ -393,6 +397,7 @@ export interface Submission {
     "body_text": string;
     "body_html": string;
     "when": string;
+    "upload_date": string;
     "keywords": string;
     "comments": Comment[];
 }
