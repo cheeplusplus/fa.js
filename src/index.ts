@@ -88,6 +88,15 @@ export class FurAffinityClient {
         };
     }
 
+    private static pickFigureId() {
+        return {
+            "attr": "id",
+            "convert": (sid: string) => {
+                return sid.split("-")[1];
+            }
+        };
+    }
+
     constructor(private cookies: string) {
     }
 
@@ -104,6 +113,46 @@ export class FurAffinityClient {
                 }
             }
         });
+    }
+
+    scrapeFavoritesPage(url: string) {
+        return this.scrape<SubmissionPage>(url, {
+            "submissions": {
+                "listItem": "figure.t-image",
+                "data": {
+                    "id": FurAffinityClient.pickFigureId(),
+                    "title": {
+                        "selector": "figcaption > p:nth-child(1) > a",
+                        "attr": "title"
+                    },
+                    "artist": {
+                        "selector": "figcaption > p:nth-child(2) > a",
+                        "attr": "title"
+                    },
+                    "thumb": FurAffinityClient.pickImage("b > u > a > img"),
+                    "url": FurAffinityClient.pickLink("b > u > a")
+                }
+            },
+            "nextPage": FurAffinityClient.pickLink("a.button-link.right"),
+            "previousPage": FurAffinityClient.pickLink("a.button-link.right"),
+        });
+    }
+
+    async *getFavorites(username: string) {
+        let url: string = `http://www.furaffinity.net/favorites/${username}`;
+        while (true) {
+            const page = await this.scrapeFavoritesPage(url);
+
+            for (const submissionListing of page.submissions) {
+                yield submissionListing;
+            }
+
+            if (page.nextPage) {
+                url = page.nextPage;
+            } else {
+                break;
+            }
+        }
     }
 
     getSubmission(id: FAID) {
@@ -317,14 +366,21 @@ export interface Comment {
     "when": string;
 }
 
+export interface SubmissionListing {
+    "id": number;
+    "title": string;
+    "artist": string;
+    "thumb": string;
+    "url": string;
+}
+
 export interface Submissions {
-    "submissions": Array<{
-        "id": number;
-        "title": string;
-        "artist": string;
-        "thumb": string;
-        "url": string;
-    }>;
+    "submissions": SubmissionListing[];
+}
+
+export interface SubmissionPage extends Submissions {
+    "previousPage": string;
+    "nextPage": string;
 }
 
 export interface Submission {
