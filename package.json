@@ -4,11 +4,11 @@
     "description": "FurAffinity interface for Javascript",
     "repository": {
         "type": "git",
-        "url": "https://github.com/AndrewNeo/fa.js.git"
+        "url": "https://github.com/cheeplusplus/fa.js.git"
     },
     "main": "build/index.js",
     "types": "build/index.d.ts",
-    "author": "AndrewNeo <andrew@andrewneo.com>",
+    "author": "Kauko <kauko@biosynth.link>",
     "license": "MIT",
     "scripts": {
         "prepublishOnly": "npm run build",
@@ -16,15 +16,14 @@
         "lint": "tslint --project tsconfig.json"
     },
     "devDependencies": {
-        "@types/cheerio": "^0.22.7",
-        "@types/superagent": "^3.8.0",
-        "tslint": "^5.10.0",
-        "tslint-language-service": "^0.9.9",
-        "typescript": "^2.9.2"
+        "@types/cheerio": "^0.22.11",
+        "@types/superagent": "^3.8.7",
+        "tslint": "^5.16.0",
+        "typescript": "^3.4.3"
     },
     "dependencies": {
-        "cheerio": "^1.0.0-rc.2",
-        "scrape-it": "^5.0.5",
+        "cheerio": "^1.0.0-rc.3",
+        "scrape-it": "^5.1.4",
         "superagent": "^3.8.3"
     }
 }

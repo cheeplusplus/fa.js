@@ -1,10 +1,7 @@
 {
     "compilerOptions": {
-        "plugins": [
-            { "name": "tslint-language-service" }
-        ],
         "module": "commonjs",
-        "target": "esnext",
+        "target": "es6",
         "noImplicitAny": true,
         "moduleResolution": "node",
         "declaration": true,

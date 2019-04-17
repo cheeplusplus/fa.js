@@ -1,5 +1,4 @@
 import * as cheerio from "cheerio";
-import * as fs from "fs";
 import * as scrape from "scrape-it";
 import * as superagent from "superagent";
 
