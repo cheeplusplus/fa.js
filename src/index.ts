@@ -397,7 +397,7 @@ export interface Submission {
     "body_text": string;
     "body_html": string;
     "when": string;
-    "upload_date": string;
+    "when_title": string;
     "keywords": string;
     "comments": Comment[];
 }
