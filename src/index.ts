@@ -168,8 +168,8 @@ export class FurAffinityClient {
                 "selector": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
                 "how": "html"
             },
-            "when": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(1) > td.alt1 > table > tbody > tr > td > span",
-            "upload_date": {
+            "when": "#page-submission td.stats-container span.popup_date",
+            "when_title": {
                 "selector": "#page-submission td.stats-container span.popup_date",
                 "attr": "title"
             },
