@@ -100,6 +100,7 @@ export class FurAffinityClient {
     }
 
     getSubmissions() {
+        // TODO: Make this return an iterable like scrapeUserGalleryPages
         return this.scrape<Submissions>("https://www.furaffinity.net/msg/submissions/", {
             "submissions": {
                 "listItem": "figure.t-image",
@@ -114,54 +115,26 @@ export class FurAffinityClient {
         });
     }
 
-    scrapeFavoritesPage(url: string) {
-        return this.scrape<SubmissionPage>(url, {
-            "submissions": {
-                "listItem": "figure.t-image",
-                "data": {
-                    "id": FurAffinityClient.pickFigureId(),
-                    "title": {
-                        "selector": "figcaption > p:nth-child(1) > a",
-                        "attr": "title"
-                    },
-                    "artist": {
-                        "selector": "figcaption > p:nth-child(2) > a",
-                        "attr": "title"
-                    },
-                    "thumb": FurAffinityClient.pickImage("b > u > a > img"),
-                    "url": FurAffinityClient.pickLink("b > u > a")
-                }
-            },
-            "nextPage": FurAffinityClient.pickLink("a.button-link.right"),
-            "previousPage": FurAffinityClient.pickLink("a.button-link.right"),
-        });
+    getUserGallery(username: string) {
+        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/gallery/${username}`);
     }
 
-    async *getFavorites(username: string) {
-        let url: string = `http://www.furaffinity.net/favorites/${username}`;
-        while (true) {
-            const page = await this.scrapeFavoritesPage(url);
+    getUserScraps(username: string) {
+        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/scraps/${username}`);
+    }
 
-            for (const submissionListing of page.submissions) {
-                yield submissionListing;
-            }
-
-            if (page.nextPage) {
-                url = page.nextPage;
-            } else {
-                break;
-            }
-        }
+    getUserFavorites(username: string) {
+        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/favorites/${username}`);
     }
 
     getSubmission(id: FAID) {
         return this.scrape<Submission>(`https://www.furaffinity.net/view/${id}/`, {
-            "title": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > th",
+            "title": "#page-submission div.classic-submission-title.information > h2",
             "thumb": FurAffinityClient.pickImage("#submissionImg", "data-preview-src"),
             "url": FurAffinityClient.pickImage("#submissionImg", "data-fullview-src"),
-            "artist": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(1) > td.cat > a",
-            "artist_url": FurAffinityClient.pickLink("#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(1) > td.cat > a"),
-            "artist_thumb": FurAffinityClient.pickImage("#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td > a:nth-child(1) > img"),
+            "artist": "#page-submission div.classic-submission-title.information > a",
+            "artist_url": FurAffinityClient.pickLink("#page-submission div.classic-submission-title.information > a"),
+            "artist_thumb": FurAffinityClient.pickImage("#page-submission div.classic-submissiont-title.avatar > a > img"),
             "body_text": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
             "body_html": {
                 "selector": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
@@ -173,7 +146,7 @@ export class FurAffinityClient {
                 "attr": "title"
             },
             "keywords": {
-                "listItem": "#keywords > a",
+                "listItem": "#page-submission #keywords > a",
                 "data": {
                     "value": ""
                 }
@@ -253,16 +226,16 @@ export class FurAffinityClient {
 
     getJournal(id: FAID) {
         return this.scrape<Journal>(`https://www.furaffinity.net/journal/${id}/`, {
-            "title": "#page-journal > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td.journal-title-box > b > font > div",
-            "user_name": "#page-journal > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td.journal-title-box > a",
-            "user_url": FurAffinityClient.pickLink("#page-journal > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td.journal-title-box > a"),
-            "user_thumb": FurAffinityClient.pickImage("#page-journal > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td.avatar-box > a > img"),
+            "title": "#page-journal td.journal-title-box > b > font > div",
+            "user_name": "#page-journal td.journal-title-box > a",
+            "user_url": FurAffinityClient.pickLink("#page-journal td.journal-title-box > a"),
+            "user_thumb": FurAffinityClient.pickImage("#page-journal td.avatar-box > a > img"),
             "body_text": "div.journal-body",
             "body_html": {
                 "selector": "div.journal-body",
                 "how": "html"
             },
-            "when": "#page-journal > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td.journal-title-box > span",
+            "when": "#page-journal td.journal-title-box > span",
             "comments": this.getCommentsObj("#page-comments")
         });
     }
@@ -332,6 +305,43 @@ export class FurAffinityClient {
                 "when": "tbody > tr:nth-child(2) > th:nth-child(2) > h4 > span"
             }
         };
+    }
+
+    protected async *scrapeUserGalleryPages(url: string) {
+        while (true) {
+            const page = await this.scrapeUserGalleryPage(url);
+
+            yield page.submissions;
+
+            if (page.nextPage) {
+                url = page.nextPage;
+            } else {
+                break;
+            }
+        }
+    }
+
+    protected scrapeUserGalleryPage(url: string) {
+        return this.scrape<SubmissionPage>(url, {
+            "submissions": {
+                "listItem": "figure.t-image",
+                "data": {
+                    "id": FurAffinityClient.pickFigureId(),
+                    "title": {
+                        "selector": "figcaption > p:nth-child(1) > a",
+                        "attr": "title"
+                    },
+                    "artist": {
+                        "selector": "figcaption > p:nth-child(2) > a",
+                        "attr": "title"
+                    },
+                    "thumb": FurAffinityClient.pickImage("b > u > a > img"),
+                    "url": FurAffinityClient.pickLink("b > u > a")
+                }
+            },
+            "nextPage": FurAffinityClient.pickLink("a.button-link.right"),
+            "previousPage": FurAffinityClient.pickLink("a.button-link.left"),
+        });
     }
 
     private async scrape<T>(url: string, options: scrape.ScrapeOptions, attempt = 1): Promise<T> {
