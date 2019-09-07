@@ -236,6 +236,10 @@ export class FurAffinityClient {
                 "how": "html"
             },
             "when": "#page-journal td.journal-title-box > span",
+            "when_title": {
+                "selector": "#page-journal td.journal-title-box > span",
+                "attr": "title"
+            },
             "comments": this.getCommentsObj("#page-comments")
         });
     }
