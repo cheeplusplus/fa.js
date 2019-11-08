@@ -96,7 +96,7 @@ export class FurAffinityClient {
         };
     }
 
-    constructor(private cookies: string) {
+    constructor(private cookies?: string) {
     }
 
     getSubmissions() {
@@ -349,8 +349,14 @@ export class FurAffinityClient {
     }
 
     private async scrape<T>(url: string, options: scrape.ScrapeOptions, attempt = 1): Promise<T> {
-        const req = await superagent.get(url).set("Cookie", this.cookies).ok((res) => true);
-        const status = FurAffinityClient.checkErrors(req);
+        const req = superagent.get(url).ok((res) => true);
+        if (this.cookies) {
+            req.set("Cookie", this.cookies);
+        }
+
+        const res = await req;
+
+        const status = FurAffinityClient.checkErrors(res);
         if (status !== 200) {
             console.warn(`FA error: Got HTTP error ${status} at ${url}`);
 
@@ -363,7 +369,7 @@ export class FurAffinityClient {
             return null;
         }
 
-        const doc = cheerio.load(req.text);
+        const doc = cheerio.load(res.text);
         return scrape.scrapeHTML<T>(doc, options);
     }
 }
