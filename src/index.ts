@@ -116,15 +116,15 @@ export class FurAffinityClient {
     }
 
     getUserGallery(username: string) {
-        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/gallery/${username}`);
+        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/gallery/${username}`);
     }
 
     getUserScraps(username: string) {
-        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/scraps/${username}`);
+        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/scraps/${username}`);
     }
 
     getUserFavorites(username: string) {
-        return this.scrapeUserGalleryPages(`http://www.furaffinity.net/favorites/${username}`);
+        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/favorites/${username}`);
     }
 
     getSubmission(id: FAID) {
