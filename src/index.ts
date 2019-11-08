@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import * as scrape from "scrape-it";
 import * as superagent from "superagent";
+import { FurAffinityError } from "./errors";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -108,7 +109,20 @@ export class FurAffinityClient {
         };
     }
 
-    constructor(private cookies?: string) {
+    private cookies?: string;
+    private throwErrors?: boolean;
+    private disableRetry?: boolean;
+
+    constructor(config?: string | { cookies?: string; throwErrors?: boolean; disableRetry?: boolean; }) {
+        if (typeof config === "string") {
+            this.cookies = config;
+            this.throwErrors = false;
+            this.disableRetry = false;
+        } else if (typeof config === "object") {
+            this.cookies = config.cookies ?? undefined;
+            this.throwErrors = config.throwErrors ?? false;
+            this.disableRetry = config.disableRetry ?? false;
+        }
     }
 
     getSubmissions() {
@@ -370,10 +384,14 @@ export class FurAffinityClient {
 
         const status = FurAffinityClient.checkErrors(res);
         if (status !== 200) {
-            console.warn(`FA error: Got HTTP error ${status} at ${url}`);
+            if (this.throwErrors && (this.disableRetry || attempt > 6)) {
+                throw new FurAffinityError("Got error from FurAffinity", status, url);
+            } else {
+                console.warn(`FA error: Got HTTP error ${status} at ${url}`);
+            }
 
             // For server errors, attempt retry w/ exponential backoff
-            if (status >= 500 && attempt <= 6) { // 2^6=64 so 60sec
+            if (!this.disableRetry && status >= 500 && attempt <= 6) { // 2^6=64 so 60sec
                 await FurAffinityClient.delay(Math.pow(2, attempt) * 1000);
                 return await this.scrape(url, options, attempt + 1) as T;
             }
