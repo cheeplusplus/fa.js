@@ -19,6 +19,18 @@ export class FurAffinityClient {
             return 404;
         }
 
+        if (res.text.indexOf("The journal you are trying to find is not in our database.") > -1) {
+            return 404;
+        }
+
+        if (res.text.indexOf("This user cannot be found.") > -1) {
+            return 404;
+        }
+
+        if (res.text.indexOf("was not found in our database") > -1) {
+            return 404;
+        }
+
         if (res.text.indexOf("For more information please check the") > -1) {
             return 500;
         }
