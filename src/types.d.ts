@@ -11,6 +11,7 @@ export interface Comment {
     "body_html": string;
     "timestamp": number;
     "when": string;
+    "when_title": string;
 }
 
 export interface SubmissionListing {
@@ -54,6 +55,7 @@ export interface Messages {
         "user_url": string;
         "user_thumb": string;
         "when": string;
+        "when_title": string;
     }>;
     "comments": Array<{
         "id": number;
@@ -63,12 +65,14 @@ export interface Messages {
         "user_name": string;
         "user_url": string;
         "when": string;
+        "when_title": string;
     }>;
     "shouts": Array<{
         "id": number;
         "user_name": string;
         "user_url": string;
         "when": string;
+        "when_title": string;
     }>;
     "favorites": Array<{
         "id": number;
@@ -77,6 +81,7 @@ export interface Messages {
         "user_name": string;
         "user_url": string;
         "when": string;
+        "when_title": string;
     }>;
     "journals": Array<{
         "id": number;
@@ -84,8 +89,8 @@ export interface Messages {
         "url": string;
         "user_name": string;
         "user_url": string;
-        "is_stream": boolean;
         "when": string;
+        "when_title": string;
     }>;
 }
 
@@ -97,6 +102,7 @@ export interface Journal {
     "body_text": string;
     "body_html": string;
     "when": string;
+    "when_title": string;
     "comments": Comment[];
 }
 
@@ -109,6 +115,7 @@ export interface Notes {
         "user_url": string;
         "unread": boolean;
         "when": string;
+        "when_title": string;
     }>;
 }
 
@@ -119,4 +126,24 @@ export interface Note {
     "body_text": string;
     "body_html": string;
     "when": string;
+    "when_title"?: string;
+}
+
+// Meta
+
+export type TypedScrapeOptionList<T> = {
+    listItem: string;
+    data?: TypedScrapeOptions<T>;
+    convert?: (value: any) => any;
+}
+
+type Unarray<T> = T extends Array<infer U> ? U : T;
+
+export type TypedScrapeOptions<T> = {
+    [P in keyof T]: string | TypedScrapeOptionList<Unarray<T[P]>> | import("scrape-it").ScrapeOptionElement;
+} | { value?: any };
+
+interface DualScrapeOptions<T> {
+    classic: TypedScrapeOptions<T>;
+    beta: TypedScrapeOptions<T>;
 }
