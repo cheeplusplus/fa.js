@@ -131,7 +131,7 @@ export interface Note {
 
 // Meta
 
-export type TypedScrapeOptionList<T> = {
+export interface TypedScrapeOptionList<T> {
     listItem: string;
     data?: TypedScrapeOptions<T>;
     convert?: (value: any) => any;
@@ -139,11 +139,11 @@ export type TypedScrapeOptionList<T> = {
 
 type Unarray<T> = T extends Array<infer U> ? U : T;
 
-export type TypedScrapeOptions<T> = {
+type TypedScrapeOptions<T> = {
     [P in keyof T]: string | TypedScrapeOptionList<Unarray<T[P]>> | import("scrape-it").ScrapeOptionElement;
 } | { value?: any };
 
-interface DualScrapeOptions<T> {
+export interface DualScrapeOptions<T> {
     classic: TypedScrapeOptions<T>;
     beta: TypedScrapeOptions<T>;
 }
