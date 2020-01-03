@@ -1,5 +1,5 @@
 src/
 .vscode/
-fa_test.js
+fa_test*
 tsconfig.json
 tslint.json
