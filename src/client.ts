@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
+import * as cloudscraper from "cloudscraper";
 import * as scrape from "scrape-it";
-import * as superagent from "superagent";
 import { FurAffinityError } from "./errors";
 import { Comment, DualScrapeOptions, FAID, Journal, Messages, Note, Notes, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
 
@@ -8,36 +8,36 @@ import { Comment, DualScrapeOptions, FAID, Journal, Messages, Note, Notes, Submi
 // TODO: Handle removed submissions/journals/etc
 
 export class FurAffinityClient {
-    public static checkErrors(res: superagent.Response): number {
-        if (res.status !== 200) {
-            return res.status;
+    public static checkErrors(res: import("request").Response): number {
+        if (res.statusCode !== 200) {
+            return res.statusCode;
         }
 
-        if (res.text.indexOf("This user has voluntarily disabled access to their userpage.") > -1) {
+        if (res.body.indexOf("This user has voluntarily disabled access to their userpage.") > -1) {
             return 403;
         }
 
-        if (res.text.indexOf("The submission you are trying to find is not in our database.") > -1) {
+        if (res.body.indexOf("The submission you are trying to find is not in our database.") > -1) {
             return 404;
         }
 
-        if (res.text.indexOf("The journal you are trying to find is not in our database.") > -1) {
+        if (res.body.indexOf("The journal you are trying to find is not in our database.") > -1) {
             return 404;
         }
 
-        if (res.text.indexOf("This user cannot be found.") > -1) {
+        if (res.body.indexOf("This user cannot be found.") > -1) {
             return 404;
         }
 
-        if (res.text.indexOf("was not found in our database") > -1) {
+        if (res.body.indexOf("was not found in our database") > -1) {
             return 404;
         }
 
-        if (res.text.indexOf("For more information please check the") > -1) {
+        if (res.body.indexOf("For more information please check the") > -1) {
             return 500;
         }
 
-        if (res.text.indexOf("The server is currently having difficulty responding to all requests.") > -1) {
+        if (res.body.indexOf("The server is currently having difficulty responding to all requests.") > -1) {
             return 503;
         }
 
@@ -626,12 +626,15 @@ export class FurAffinityClient {
     }
 
     private async scrape<T>(url: string, options: DualScrapeOptions<T>, attempt = 1): Promise<T> {
-        const req = superagent.get(url).ok(() => true);
+        const reqOpts: { url: string, headers?: {}, resolveWithFullResponse?: boolean; } = { url, "resolveWithFullResponse": true };
+
         if (this.cookies) {
-            req.set("Cookie", this.cookies);
+            reqOpts.headers = {
+                "Cookie": this.cookies
+            };
         }
 
-        const res = await req;
+        const res: import("request").Response = await cloudscraper.get(reqOpts);
 
         const status = FurAffinityClient.checkErrors(res);
         if (status !== 200) {
@@ -650,7 +653,7 @@ export class FurAffinityClient {
             return null;
         }
 
-        const doc = cheerio.load(res.text);
+        const doc = cheerio.load(res.body);
 
         const siteVersion = this.determineSiteVersion(doc);
         let useOptions = options.classic;
