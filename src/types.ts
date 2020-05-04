@@ -32,6 +32,7 @@ export interface SubmissionPage extends Submissions {
 }
 
 export interface Submission {
+    "id": number;
     "title": string;
     "thumb": string;
     "url": string;
@@ -43,7 +44,13 @@ export interface Submission {
     "when": string;
     "when_title": string;
     "keywords": string;
+    "nav_items": number[];
     "comments": Comment[];
+}
+
+export interface Navigation {
+    "previous"?: number;
+    "next"?: number;
 }
 
 export interface Messages {

@@ -2,12 +2,49 @@ import * as cheerio from "cheerio";
 import * as cloudscraper from "cloudscraper";
 import * as scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
-import { Comment, DualScrapeOptions, FAID, Journal, Messages, Note, Notes, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
+import { Comment, DualScrapeOptions, FAID, Journal, Messages, Navigation, Note, Notes, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
 
 export class FurAffinityClient {
+    static getNavigationFromSubmission(submission: Submission): Navigation;
+    static getNavigationFromSubmission(id: FAID, items: number[]): Navigation;
+    static getNavigationFromSubmission(id: FAID | Submission, items?: number[]): Navigation {
+        if (typeof id === "object") {
+            items = id.nav_items;
+            id = id.id;
+        }
+
+        if (!items || items.length < 1) {
+            return {};
+        }
+
+        const allIds = items.sort();
+
+        let prevId = -1;
+        let nextId = -1;
+        for (const curId of allIds) {
+            if (curId > id) {
+                nextId = curId;
+                break;
+            } else {
+                prevId = curId;
+            }
+        }
+
+        const navigation: Navigation = {};
+
+        if (prevId > -1) {
+            navigation.previous = prevId;
+        }
+        if (nextId > -1) {
+            navigation.next = nextId;
+        }
+
+        return navigation;
+    }
+
     public static checkErrors(res: import("request").Response): number {
         if (res.statusCode !== 200) {
             return res.statusCode;
@@ -115,6 +152,14 @@ export class FurAffinityClient {
         };
     }
 
+    private static ensureIdIsNumber(id: FAID): number {
+        if (typeof id === "number") {
+            return id;
+        }
+
+        return parseInt(id, 10);
+    }
+
     private cookies?: string;
     private throwErrors?: boolean;
     private disableRetry?: boolean;
@@ -147,9 +192,13 @@ export class FurAffinityClient {
         return this.scrapeUserGalleryPages(`https://www.furaffinity.net/favorites/${username}`);
     }
 
-    getSubmission(id: FAID) {
+    async getSubmission(id: FAID) {
         return this.scrape<Submission>(`https://www.furaffinity.net/view/${id}/`, {
             "classic": {
+                "id": {
+                    "selector": "a", // Have to select something
+                    "convert": () => FurAffinityClient.ensureIdIsNumber(id),
+                },
                 "title": "#page-submission div.classic-submission-title.information > h2",
                 "thumb": FurAffinityClient.pickImage("#submissionImg", "data-preview-src"),
                 "url": FurAffinityClient.pickImage("#submissionImg", "data-fullview-src"),
@@ -170,9 +219,23 @@ export class FurAffinityClient {
                     },
                     "convert": (c: { value: string }) => c.value,
                 },
+                "nav_items": {
+                    "listItem": `#page-submission div.minigallery-container ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "data": {
+                        "value": {
+                            "attr": "href",
+                            "convert": FurAffinityClient.getViewPath
+                        }
+                    },
+                    "convert": (c: { value: number }) => c.value
+                },
                 "comments": this.getCommentsObj("#comments-submission", "classic")
             },
             "beta": {
+                "id": {
+                    "selector": "a", // Have to select something
+                    "convert": () => FurAffinityClient.ensureIdIsNumber(id),
+                },
                 "title": "#submission_page div.submission-title p",
                 "thumb": FurAffinityClient.pickImage("#submissionImg", "data-preview-src"),
                 "url": FurAffinityClient.pickImage("#submissionImg", "data-fullview-src"),
@@ -192,6 +255,16 @@ export class FurAffinityClient {
                         "value": ""
                     },
                     "convert": (c: { value: string }) => c.value,
+                },
+                "nav_items": {
+                    "listItem": `#submission_page section.minigallery-more div.preview-gallery ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "data": {
+                        "value": {
+                            "attr": "href",
+                            "convert": FurAffinityClient.getViewPath
+                        }
+                    },
+                    "convert": (c: { value: number }) => c.value
                 },
                 "comments": this.getCommentsObj("#comments-submission", "beta")
             }
