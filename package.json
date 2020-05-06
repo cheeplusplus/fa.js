@@ -16,11 +16,11 @@
         "lint": "tslint --project tsconfig.json"
     },
     "devDependencies": {
-        "@types/cheerio": "^0.22.15",
+        "@types/cheerio": "^0.22.18",
         "@types/request": "^2.48.4",
-        "@types/request-promise": "^4.1.45",
-        "tslint": "^5.20.1",
-        "typescript": "^3.7.4"
+        "@types/request-promise": "^4.1.46",
+        "tslint": "^6.1.2",
+        "typescript": "^3.8.3"
     },
     "dependencies": {
         "cheerio": "^1.0.0-rc.3",
