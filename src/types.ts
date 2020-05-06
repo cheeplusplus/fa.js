@@ -1,5 +1,23 @@
 // Type definitions
 
+export interface ClientConfig {
+    cookies?: string;
+    throwErrors?: boolean;
+    disableRetry?: boolean;
+    httpClient?: HttpClient;
+}
+
+export interface HttpClient {
+    fetch(url: string, cookies?: string): Promise<StandardHttpResponse>;
+}
+
+export interface StandardHttpResponse {
+    statusCode: number;
+    body: string;
+}
+
+// FA types
+
 export type FAID = string | number;
 
 export interface Comment {

@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio";
-import * as cloudscraper from "cloudscraper";
 import * as scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
-import { Comment, DualScrapeOptions, FAID, Journal, Messages, Navigation, Note, Notes, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
+import { CloudscraperHttpClient } from "./httpclients";
+import { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -45,7 +45,7 @@ export class FurAffinityClient {
         return navigation;
     }
 
-    public static checkErrors(res: import("request").Response): number {
+    public static checkErrors(res: StandardHttpResponse): number {
         if (res.statusCode !== 200) {
             return res.statusCode;
         }
@@ -163,8 +163,9 @@ export class FurAffinityClient {
     private cookies?: string;
     private throwErrors?: boolean;
     private disableRetry?: boolean;
+    private httpClient: HttpClient;
 
-    constructor(config?: string | { cookies?: string; throwErrors?: boolean; disableRetry?: boolean; }) {
+    constructor(config?: string | ClientConfig) {
         if (typeof config === "string") {
             this.cookies = config;
             this.throwErrors = false;
@@ -173,6 +174,11 @@ export class FurAffinityClient {
             this.cookies = config.cookies ?? undefined;
             this.throwErrors = config.throwErrors ?? false;
             this.disableRetry = config.disableRetry ?? false;
+            this.httpClient = config.httpClient;
+        }
+
+        if (!this.httpClient) {
+            this.httpClient = new CloudscraperHttpClient();
         }
     }
 
@@ -699,15 +705,7 @@ export class FurAffinityClient {
     }
 
     private async scrape<T>(url: string, options: DualScrapeOptions<T>, attempt = 1): Promise<T> {
-        const reqOpts: { url: string, headers?: {}, resolveWithFullResponse?: boolean; } = { url, "resolveWithFullResponse": true };
-
-        if (this.cookies) {
-            reqOpts.headers = {
-                "Cookie": this.cookies
-            };
-        }
-
-        const res: import("request").Response = await cloudscraper.get(reqOpts);
+        const res = await this.httpClient.fetch(url, this.cookies);
 
         const status = FurAffinityClient.checkErrors(res);
         if (status !== 200) {
