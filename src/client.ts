@@ -8,9 +8,11 @@ import { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Me
 // TODO: Handle removed submissions/journals/etc
 
 export class FurAffinityClient {
-    static getNavigationFromSubmission(submission: Submission): Navigation;
-    static getNavigationFromSubmission(id: FAID, items: number[]): Navigation;
-    static getNavigationFromSubmission(id: FAID | Submission, items?: number[]): Navigation {
+    public static SITE_ROOT = "https://www.furaffinity.net";
+
+    public static getNavigationFromSubmission(submission: Submission): Navigation;
+    public static getNavigationFromSubmission(id: FAID, items: number[]): Navigation;
+    public static getNavigationFromSubmission(id: FAID | Submission, items?: number[]): Navigation {
         if (typeof id === "object") {
             items = id.nav_items;
             id = id.id;
@@ -45,7 +47,7 @@ export class FurAffinityClient {
         return navigation;
     }
 
-    public static checkErrors(res: StandardHttpResponse): number {
+    private static checkErrors(res: StandardHttpResponse): number {
         if (res.statusCode !== 200) {
             return res.statusCode;
         }
@@ -100,7 +102,7 @@ export class FurAffinityClient {
         if (str.startsWith("//")) {
             return `https:${str}`;
         } else if (str.startsWith("/")) {
-            return `https://www.furaffinity.net${str}`;
+            return `${FurAffinityClient.SITE_ROOT}${str}`;
         } else {
             return str;
         }
@@ -183,23 +185,23 @@ export class FurAffinityClient {
     }
 
     getSubmissions() {
-        return this.scrapeSubmissionPages(`https://www.furaffinity.net/msg/submissions/`);
+        return this.scrapeSubmissionPages(`${FurAffinityClient.SITE_ROOT}/msg/submissions/`);
     }
 
     getUserGallery(username: string) {
-        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/gallery/${username}`);
+        return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/gallery/${username}`);
     }
 
     getUserScraps(username: string) {
-        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/scraps/${username}`);
+        return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/scraps/${username}`);
     }
 
     getUserFavorites(username: string) {
-        return this.scrapeUserGalleryPages(`https://www.furaffinity.net/favorites/${username}`);
+        return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/favorites/${username}`);
     }
 
     async getSubmission(id: FAID) {
-        return this.scrape<Submission>(`https://www.furaffinity.net/view/${id}/`, {
+        return this.scrape<Submission>(`${FurAffinityClient.SITE_ROOT}/view/${id}/`, {
             "classic": {
                 "id": {
                     "selector": "a", // Have to select something
@@ -278,7 +280,7 @@ export class FurAffinityClient {
     }
 
     getMessages() {
-        return this.scrape<Messages>("https://www.furaffinity.net/msg/others/", {
+        return this.scrape<Messages>(`${FurAffinityClient.SITE_ROOT}/msg/others/`, {
             "classic": {
                 "self_user_name": {
                     "selector": "a#my-username",
@@ -418,7 +420,7 @@ export class FurAffinityClient {
     }
 
     getJournal(id: FAID) {
-        return this.scrape<Journal>(`https://www.furaffinity.net/journal/${id}/`, {
+        return this.scrape<Journal>(`${FurAffinityClient.SITE_ROOT}/journal/${id}/`, {
             "classic": {
                 "title": "#page-journal td.journal-title-box > b > font > div",
                 "user_name": "#page-journal td.journal-title-box > a",
@@ -454,7 +456,7 @@ export class FurAffinityClient {
     }
 
     getNotes() {
-        return this.scrape<Notes>("https://www.furaffinity.net/msg/pms/", {
+        return this.scrape<Notes>(`${FurAffinityClient.SITE_ROOT}/msg/pms/`, {
             "classic": {
                 "notes": {
                     "listItem": "#notes-list > tbody > tr.note",
@@ -498,7 +500,7 @@ export class FurAffinityClient {
 
     getNote(id: FAID) {
         // TODO: Improve how the body and when are pulled in classic
-        return this.scrape<Note>(`https://www.furaffinity.net/viewmessage/${id}/`, {
+        return this.scrape<Note>(`${FurAffinityClient.SITE_ROOT}/viewmessage/${id}/`, {
             "classic": {
                 "title": "#pms-form > table.maintable > tbody > tr > td > font > b",
                 "user_name": "#pms-form > table.maintable > tbody > tr:nth-child(2) > td > font > a:nth-child(1)",
