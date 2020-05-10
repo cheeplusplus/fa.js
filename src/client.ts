@@ -188,16 +188,32 @@ export class FurAffinityClient {
         return this.scrapeSubmissionPages(`${FurAffinityClient.SITE_ROOT}/msg/submissions/`);
     }
 
+    getSubmissionsPage(nextUrl: string = `/msg/submissions/`) {
+        return this.scrapeSubmissionsPage(`${FurAffinityClient.SITE_ROOT}${nextUrl}`);
+    }
+
     getUserGallery(username: string) {
         return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/gallery/${username}`);
+    }
+
+    getUserGalleryPage(username: string, page: string | number) {
+        return this.scrapeUserGalleryPage(`${FurAffinityClient.SITE_ROOT}/gallery/${username}/${page}/`);
     }
 
     getUserScraps(username: string) {
         return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/scraps/${username}`);
     }
 
+    getUserScrapsPage(username: string, page: string | number) {
+        return this.scrapeUserGalleryPage(`${FurAffinityClient.SITE_ROOT}/scraps/${username}/${page}/`);
+    }
+
     getUserFavorites(username: string) {
         return this.scrapeUserGalleryPages(`${FurAffinityClient.SITE_ROOT}/favorites/${username}`);
+    }
+
+    getUserFavoritesPage(username: string, page: string | number) {
+        return this.scrapeUserGalleryPage(`${FurAffinityClient.SITE_ROOT}/favorites/${username}/${page}/`);
     }
 
     async getSubmission(id: FAID) {
