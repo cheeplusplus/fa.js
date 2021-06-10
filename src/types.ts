@@ -74,15 +74,15 @@ export interface Navigation {
 export interface Messages {
     "self_user_name": string;
     "self_user_url": string;
-    "watches": Array<{
+    "watches": {
         "id": number;
         "user_name": string;
         "user_url": string;
         "user_thumb": string;
         "when": string;
         "when_title": string;
-    }>;
-    "comments": Array<{
+    }[];
+    "comments": {
         "id": number;
         "title": string;
         "url": string;
@@ -91,15 +91,25 @@ export interface Messages {
         "user_url": string;
         "when": string;
         "when_title": string;
-    }>;
-    "shouts": Array<{
+    }[];
+    "journal_comments": {
+        "id": number;
+        "title": string;
+        "url": string;
+        "journal_id": number;
+        "user_name": string;
+        "user_url": string;
+        "when": string;
+        "when_title": string;
+    }[];
+    "shouts": {
         "id": number;
         "user_name": string;
         "user_url": string;
         "when": string;
         "when_title": string;
-    }>;
-    "favorites": Array<{
+    }[];
+    "favorites": {
         "id": number;
         "title": string;
         "url": string;
@@ -107,8 +117,8 @@ export interface Messages {
         "user_url": string;
         "when": string;
         "when_title": string;
-    }>;
-    "journals": Array<{
+    }[];
+    "journals": {
         "id": number;
         "title": string;
         "url": string;
@@ -116,7 +126,7 @@ export interface Messages {
         "user_url": string;
         "when": string;
         "when_title": string;
-    }>;
+    }[];
 }
 
 export interface Journal {
@@ -132,7 +142,7 @@ export interface Journal {
 }
 
 export interface Notes {
-    "notes": Array<{
+    "notes": {
         "id": number;
         "title": string;
         "url": string;
@@ -141,7 +151,7 @@ export interface Notes {
         "unread": boolean;
         "when": string;
         "when_title": string;
-    }>;
+    }[];
 }
 
 export interface Note {
@@ -162,7 +172,7 @@ export interface TypedScrapeOptionList<T> {
     convert?: (value: any) => any;
 }
 
-type Unarray<T> = T extends Array<infer U> ? U : T;
+type Unarray<T> = T extends (infer U)[] ? U : T;
 
 type TypedScrapeOptions<T> = {
     [P in keyof T]: string | TypedScrapeOptionList<Unarray<T[P]>> | import("scrape-it").ScrapeOptionElement;

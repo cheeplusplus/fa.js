@@ -117,6 +117,15 @@ export class FurAffinityClient {
         return parseInt(matches[1]);
     }
 
+    private static getJournalPath(str: string) {
+        const rr = /\/journal\/(\d+)/;
+        const matches = rr.exec(str);
+        if (!matches || matches.length < 2) {
+            return null;
+        }
+        return parseInt(matches[1]);
+    }
+
     private static pick(selector: string, attr: string) {
         return {
             selector,
@@ -331,6 +340,23 @@ export class FurAffinityClient {
                         "when_title": FurAffinityClient.pick("span", "title"),
                     }
                 },
+                "journal_comments": {
+                    "listItem": "fieldset#messages-comments-journal > ul.message-stream > li:not(.section-controls)",
+                    "data": {
+                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "title": FurAffinityClient.SELECTOR_JOURNAL,
+                        "url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
+                        "journal_id": {
+                            "selector": FurAffinityClient.SELECTOR_JOURNAL,
+                            "attr": "href",
+                            "convert": FurAffinityClient.getJournalPath
+                        },
+                        "user_name": FurAffinityClient.SELECTOR_USER,
+                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
+                        "when": "span",
+                        "when_title": FurAffinityClient.pick("span", "title"),
+                    }
+                },
                 "shouts": {
                     "listItem": "fieldset#messages-shouts > ul.message-stream > li:not(.section-controls)",
                     "data": {
@@ -390,6 +416,23 @@ export class FurAffinityClient {
                             "selector": FurAffinityClient.SELECTOR_VIEW,
                             "attr": "href",
                             "convert": FurAffinityClient.getViewPath
+                        },
+                        "user_name": FurAffinityClient.SELECTOR_USER,
+                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
+                        "when": "span.popup_date",
+                        "when_title": FurAffinityClient.pick("span.popup_date", "title"),
+                    }
+                },
+                "journal_comments": {
+                    "listItem": "fieldset#messages-comments-journal ul.message-stream > li",
+                    "data": {
+                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "title": FurAffinityClient.SELECTOR_JOURNAL,
+                        "url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
+                        "journal_id": {
+                            "selector": FurAffinityClient.SELECTOR_JOURNAL,
+                            "attr": "href",
+                            "convert": FurAffinityClient.getJournalPath
                         },
                         "user_name": FurAffinityClient.SELECTOR_USER,
                         "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
