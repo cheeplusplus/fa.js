@@ -1,4 +1,5 @@
-import { HttpClient } from "../types";
+import type { HttpClient } from "../types";
+import type { Response } from "request";
 
 export class CloudscraperHttpClient implements HttpClient {
     private cloudscraper: typeof import("cloudscraper");
@@ -17,7 +18,7 @@ export class CloudscraperHttpClient implements HttpClient {
             };
         }
 
-        const res: import("request").Response = await this.cloudscraper.get(reqOpts);
+        const res = await this.cloudscraper.get(reqOpts) as Response;
         return res;
     }
 }

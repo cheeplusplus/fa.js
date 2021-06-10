@@ -1,4 +1,4 @@
-import { HttpClient } from "../types";
+import type { HttpClient } from "../types";
 
 export class FetchHttpClient implements HttpClient {
     async fetch(url: string, cookies?: string) {

@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 import * as scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
 import { CloudscraperHttpClient } from "./httpclients";
-import { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
+import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -424,7 +424,7 @@ export class FurAffinityClient {
                     }
                 },
                 "journal_comments": {
-                    "listItem": "fieldset#messages-comments-journal ul.message-stream > li",
+                    "listItem": "#messages-comments-journal ul.message-stream > li",
                     "data": {
                         "id": FurAffinityClient.pickCheckboxValue(),
                         "title": FurAffinityClient.SELECTOR_JOURNAL,
