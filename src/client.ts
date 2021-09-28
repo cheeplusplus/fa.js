@@ -750,7 +750,7 @@ export class FurAffinityClient {
         });
     }
 
-    protected determineSiteVersion(doc: CheerioStatic): string {
+    protected determineSiteVersion(doc: cheerio.Root): string {
         const scraped = scrape.scrapeHTML<{ path: string }>(doc, {
             "path": {
                 "selector": "body",
