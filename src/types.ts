@@ -20,27 +20,32 @@ export interface StandardHttpResponse {
 
 export type FAID = string | number;
 
-export interface Comment {
+export interface CommentText {
     "id": number;
-    "user_name": string;
-    "user_url": string;
-    "user_thumb": string;
     "body_text": string;
     "body_html": string;
+}
+
+export interface Comment extends CommentText {
+    "self_link": string;
+    "user_name": string;
+    "user_url": string;
+    "user_thumb_url": string;
     "timestamp": number;
-    "when": string;
-    "when_title": string;
+    "when": Date;
 }
 
 export interface SubmissionListing {
     "id": number;
+    "self_link": string;
     "title": string;
-    "artist": string;
-    "thumb": string;
-    "url": string;
+    "artist_name": string;
+    "thumb_url": string;
+    "when": Date;
 }
 
 export interface Submissions {
+    "self_link": string;
     "submissions": SubmissionListing[];
 }
 
@@ -51,16 +56,17 @@ export interface SubmissionPage extends Submissions {
 
 export interface Submission {
     "id": number;
+    "self_link": string;
+    "type": "image" | "flash" | "story" | "music";
     "title": string;
-    "thumb": string;
-    "url": string;
-    "artist": string;
+    "thumb_url": string;
+    "content_url": string;
+    "artist_name": string;
     "artist_url": string;
-    "artist_thumb": string;
+    "artist_thumb_url": string;
     "body_text": string;
     "body_html": string;
-    "when": string;
-    "when_title": string;
+    "when": Date;
     "keywords": string;
     "nav_items": number[];
     "comments": Comment[];
@@ -71,26 +77,81 @@ export interface Navigation {
     "next"?: number;
 }
 
+export interface UserPage {
+    "user_name": string; // Fancy version of username string
+    "self_link": string;
+    "user_class": string;
+    "user_thumb_url": string;
+    "header_text": string;
+    "header_html": string;
+    "statistics_text": string;
+    "statistics_html": string;
+    "featured_submission": {
+        "id": number;
+        "self_link": string;
+        "title": string;
+        "thumb_url": string;
+    };
+    "latest_submissions": {
+        "id": number;
+        "self_link": string;
+        // "title": string; // TODO: Pull these out of the page's submission_data variable
+        "thumb_url": string;
+        "when": Date;
+    }[];
+    "favorites": {
+        "id": number;
+        "self_link": string;
+        // "title": string;
+        // "artist_name": string;
+        "thumb_url": string;
+        "when": Date;
+    }[];
+    "top_journal": {
+        "id": number;
+        "self_link": string;
+        "title": string;
+        "body_text": string;
+        "body_html": string;
+        "when": Date;
+        "comment_count": number;
+    };
+    "profile_id": {
+        "id": number;
+        "self_link": string;
+        "thumb_url": string;
+        "when": Date;
+    };
+    "artist_information": { "title": string; "value": string; }[];
+    "contact_information": { "service": string; "link": string; "value": string }[];
+    "shouts": {
+        "id": number;
+        "user_name": string;
+        "user_url": string;
+        "user_thumb_url": string;
+        "body_text": string;
+        "body_html": string;
+        "when": Date;
+    }[];
+}
+
 export interface Messages {
-    "self_user_name": string;
-    "self_user_url": string;
+    "my_username": string;
     "watches": {
         "id": number;
         "user_name": string;
         "user_url": string;
-        "user_thumb": string;
-        "when": string;
-        "when_title": string;
+        "user_thumb_url": string;
+        "when": Date;
     }[];
     "comments": {
         "id": number;
-        "title": string;
-        "url": string;
         "submission_id": number;
+        "submission_title": string;
+        "submission_url": string;
         "user_name": string;
         "user_url": string;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
     "journal_comments": {
         "id": number;
@@ -99,69 +160,81 @@ export interface Messages {
         "journal_id": number;
         "user_name": string;
         "user_url": string;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
     "shouts": {
         "id": number;
         "user_name": string;
         "user_url": string;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
     "favorites": {
         "id": number;
-        "title": string;
-        "url": string;
+        "submission_id": number;
+        "submission_title": string;
+        "submission_url": string;
         "user_name": string;
         "user_url": string;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
     "journals": {
         "id": number;
-        "title": string;
-        "url": string;
+        "journal_title": string;
+        "journal_url": string;
         "user_name": string;
         "user_url": string;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
 }
 
 export interface Journal {
+    "id": number;
+    "self_link": string;
     "title": string;
     "user_name": string;
     "user_url": string;
-    "user_thumb": string;
+    "user_thumb_url": string;
     "body_text": string;
     "body_html": string;
-    "when": string;
-    "when_title": string;
+    "when": Date;
     "comments": Comment[];
+}
+
+export interface Journals {
+    "self_link": string;
+    "user_name": string;
+    "journals": {
+        "id": number;
+        "self_link": string;
+        "title": string;
+        "body_text": string;
+        "body_html": string;
+        "when": Date;
+        "comment_count": number;
+    }[];
 }
 
 export interface Notes {
     "notes": {
         "id": number;
+        "self_link": string;
         "title": string;
-        "url": string;
         "user_name": string;
         "user_url": string;
         "unread": boolean;
-        "when": string;
-        "when_title": string;
+        "when": Date;
     }[];
 }
 
 export interface Note {
+    "id": number;
+    "self_link": string;
     "title": string;
     "user_name": string;
     "user_url": string;
     "body_text": string;
     "body_html": string;
-    "when": string;
-    "when_title"?: string;
+    "when": Date;
 }
 
 // Meta
@@ -170,9 +243,11 @@ export interface TypedScrapeOptionList<T> {
     listItem: string;
     data?: TypedScrapeOptions<T>;
     convert?: (value: any) => any;
+    how?: string | ((element: cheerio.Selector) => any);
 }
 
-type Unarray<T> = T extends (infer U)[] ? U : T;
+// tslint:disable-next-line: array-type
+type Unarray<T> = T extends Array<infer U> ? U : T;
 
 type TypedScrapeOptions<T> = {
     [P in keyof T]: string | TypedScrapeOptionList<Unarray<T[P]>> | import("scrape-it").ScrapeOptionElement;
