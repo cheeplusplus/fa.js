@@ -1,5 +1,5 @@
-import type { HttpClient } from "../types";
-import type { Response } from "request";
+import type { HttpClient, HttpClientConfig } from "../types";
+import { StandardHttpResponse } from "src";
 
 export class CloudscraperHttpClient implements HttpClient {
     private cloudscraper: typeof import("cloudscraper");
@@ -9,16 +9,35 @@ export class CloudscraperHttpClient implements HttpClient {
         this.cloudscraper = require("cloudscraper");
     }
 
-    async fetch(url: string, cookies?: string) {
-        const reqOpts: { url: string, headers?: {}, resolveWithFullResponse?: boolean; } = { url, "resolveWithFullResponse": true };
+    async fetch(url: string, config: HttpClientConfig) {
+        const reqOpts: import("cloudscraper").OptionsWithUrl = {
+            url,
+            "resolveWithFullResponse": true,
+            "headers": {
+                "content-type": config["content-type"],
+            },
+        };
 
-        if (cookies) {
-            reqOpts.headers = {
-                "Cookie": cookies
-            };
+        if (config?.cookies) {
+            reqOpts.headers["Cookie"] = config.cookies;
         }
 
-        const res = await this.cloudscraper.get(reqOpts) as Response;
+        if (config?.body) {
+            if (config?.['content-type'] === "application/x-www-form-urlencoded") {
+                reqOpts.formData = config.body;
+            } else {
+                reqOpts.body = config.body;
+            }
+        }
+
+        let req: import("cloudscraper").Cloudscraper;
+        if (config?.method === 'POST') {
+            req = this.cloudscraper.post(reqOpts);
+        } else {
+            req = this.cloudscraper.get(reqOpts);
+        }
+
+        const res = (await req) as StandardHttpResponse;
         return res;
     }
 }

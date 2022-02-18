@@ -1,9 +1,10 @@
 import * as cheerio from "cheerio";
 import * as datefns from "date-fns";
 import * as scrape from "scrape-it";
+import { FetchConfig, NoteMoveAction } from "src";
 import { FurAffinityError } from "./errors";
 import { CloudscraperHttpClient } from "./httpclients";
-import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText } from "./types";
+import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -121,6 +122,7 @@ export class FurAffinityClient {
     private static SELECTOR_USER = "a[href*=\"/user/\"]";
     private static SELECTOR_VIEW = "a[href*=\"/view/\"]";
     private static SELECTOR_JOURNAL = "a[href*=\"/journal/\"]";
+    private static SELECTOR_THUMB = "img[src*=\"//t.furaffinity.net/\"]";
 
     private static delay(ms: number) {
         return new Promise((r) => {
@@ -330,7 +332,7 @@ export class FurAffinityClient {
 
     async getUserPage(username: string) {
         const path = `/user/${username}/`;
-        const body = await this.fetch(path);
+        const body = await this.fetch(path, undefined);
 
         const base = this.scrape<Omit<UserPage, 'featured_submission' | 'top_journal' | 'profile_id'>>(body, {
             "classic": {
@@ -1117,6 +1119,18 @@ export class FurAffinityClient {
         });
     }
 
+    async moveNote(ids: FAID | FAID[], moveTo: NoteMoveAction) {
+        await this.fetch(`/msg/pms/`, {
+            "method": "POST",
+            "body": {
+                "manage_notes": 1,
+                "move_to": moveTo,
+                "items[]": ids,
+            },
+            "content-type": "application/x-www-form-urlencoded"
+        });
+    }
+
     getCommentText(id: FAID, origin: "submission" | "journal") {
         return this.fetchAndScrape<CommentText>(`/replyto/${origin}/${id}`, {
             "classic": {
@@ -1195,16 +1209,115 @@ export class FurAffinityClient {
         return structure[mode];
     }
 
+    async * search(query: string, params?: Partial<SearchQueryParams>) {
+        let pageNum = 0;
+        while (true) {
+            pageNum++;
+            const page = await this.getSearchPage(query, params, pageNum);
+
+            if (page.more) {
+                yield page.submissions;
+            } else {
+                return page.submissions;
+            }
+        }
+    }
+
+    async getSearchPage(query: string, params?: Partial<SearchQueryParams>, page: number = 1) {
+        return this.fetchAndScrape<SearchPage>(`/search/`, {
+            "classic": {
+                "submissions": {
+                    "listItem": "#gallery-search-results figure.t-image",
+                    "data": {
+                        "id": FurAffinityClient.pickFigureId(),
+                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
+                        "title": `figcaption ${FurAffinityClient.SELECTOR_VIEW}`,
+                        "artist_name": `figcaption ${FurAffinityClient.SELECTOR_USER}`,
+                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
+                        "when": FurAffinityClient.pickDateFromThumbnail(FurAffinityClient.SELECTOR_THUMB)
+                    }
+                },
+                "more": {
+                    "selector": "fieldset#search-results button[type='submit'][name='next_page']",
+                    "convert": (a) => !!a,
+                },
+            },
+            "beta": {
+                "submissions": {
+                    "listItem": "#gallery-search-results figure.t-image",
+                    "data": {
+                        "id": FurAffinityClient.pickFigureId(),
+                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
+                        "title": `figcaption ${FurAffinityClient.SELECTOR_VIEW}`,
+                        "artist_name": `figcaption ${FurAffinityClient.SELECTOR_USER}`,
+                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
+                        "when": FurAffinityClient.pickDateFromThumbnail(FurAffinityClient.SELECTOR_THUMB),
+                    }
+                },
+                "more": {
+                    "selector": "div#search-results button[type='submit'][name='next_page']",
+                    "convert": (a) => !!a,
+                },
+            },
+            "configuration": {
+                "method": "POST",
+                "body": this.generateSearchBody(query, params, page),
+                "content-type": "application/x-www-form-urlencoded"
+            }
+        });
+    }
+
+    protected generateSearchBody(query: string, params?: Partial<SearchQueryParams>, page: number = 1): SearchQueryBody {
+        // Populate defaults
+        const body: SearchQueryBody = {
+            "q": query,
+            "page": page,
+            "perpage": params?.perpage || 72,
+            "order-by": params?.order_by || "relevancy",
+            "order-direction": params?.order_dir || "desc",
+            "do_search": "Search",
+            "range": params?.range || "5years",
+            "mode": params?.mode || "extended",
+        };
+
+        if (params?.ratings) {
+            if (params.ratings.general) body["rating-general"] = "on";
+            if (params.ratings.mature) body["rating-mature"] = "on";
+            if (params.ratings.adult) body["rating-adult"] = "on";
+        } else {
+            // Default is general
+            body["rating-general"] = "on";
+        }
+
+        if (params?.types) {
+            if (params.types.art) body["type-art"] = "on";
+            if (params.types.flash) body["type-flash"] = "on";
+            if (params.types.photo) body["type-photo"] = "on";
+            if (params.types.music) body["type-music"] = "on";
+            if (params.types.story) body["type-story"] = "on";
+            if (params.types.poetry) body["type-poetry"] = "on";
+        } else {
+            // Default are everything
+            body["type-art"] = "on";
+            body["type-flash"] = "on";
+            body["type-photo"] = "on";
+            body["type-music"] = "on";
+            body["type-story"] = "on";
+            body["type-poetry"] = "on";
+        }
+
+        return body;
+    }
+
     protected async * scrapeSubmissionPages(url: string) {
         while (true) {
             const page = await this.scrapeSubmissionsPage(url);
 
-            yield page.submissions;
-
             if (page.nextPage) {
+                yield page.submissions;
                 url = page.nextPage;
             } else {
-                break;
+                return page.submissions;
             }
         }
     }
@@ -1262,12 +1375,11 @@ export class FurAffinityClient {
         while (true) {
             const page = await this.scrapeUserGalleryPage(url, pageType);
 
-            yield page.submissions;
-
             if (page.nextPage) {
+                yield page.submissions;
                 url = page.nextPage;
             } else {
-                break;
+                return page.submissions;
             }
         }
     }
@@ -1324,9 +1436,12 @@ export class FurAffinityClient {
         return "classic";
     }
 
-    private async fetch(path: string, attempt = 1): Promise<string> {
+    private async fetch(path: string, config: FetchConfig, attempt = 1): Promise<string> {
         const url = `${FurAffinityClient.SITE_ROOT}${path}`;
-        const res = await this.httpClient.fetch(url, this.cookies);
+        const res = await this.httpClient.fetch(url, {
+            ...config,
+            "cookies": this.cookies,
+        });
 
         const status = FurAffinityClient.checkErrors(res);
         if (status !== 200) {
@@ -1339,7 +1454,7 @@ export class FurAffinityClient {
             // For server errors, attempt retry w/ exponential backoff
             if (!this.disableRetry && status >= 500 && attempt <= 6) { // 2^6=64 so 60sec
                 await FurAffinityClient.delay(Math.pow(2, attempt) * 1000);
-                return await this.fetch(url, attempt + 1);
+                return await this.fetch(url, config, attempt + 1);
             }
 
             return null;
@@ -1364,7 +1479,7 @@ export class FurAffinityClient {
     }
 
     private async fetchAndScrape<T>(path: string, options: DualScrapeOptions<T>): Promise<T> {
-        const body = await this.fetch(path);
+        const body = await this.fetch(path, options.configuration);
         return this.scrape<T>(body, options);
     }
 }
