@@ -1,5 +1,4 @@
-import type { HttpClient, HttpClientConfig } from "../types";
-import { StandardHttpResponse } from "src";
+import type { HttpClient, HttpClientConfig, StandardHttpResponse } from "../types";
 
 export class CloudscraperHttpClient implements HttpClient {
     private cloudscraper: typeof import("cloudscraper");
