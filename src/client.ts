@@ -1,10 +1,9 @@
 import * as cheerio from "cheerio";
 import * as datefns from "date-fns";
 import * as scrape from "scrape-it";
-import { FetchConfig, NoteMoveAction } from "src";
 import { FurAffinityError } from "./errors";
 import { CloudscraperHttpClient } from "./httpclients";
-import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody } from "./types";
+import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
