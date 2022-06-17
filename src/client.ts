@@ -3,7 +3,7 @@ import * as datefns from "date-fns";
 import * as scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
 import { CloudscraperHttpClient } from "./httpclients";
-import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig } from "./types";
+import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig, SubmissionStatistics } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -85,6 +85,10 @@ export class FurAffinityClient {
     private static checkErrors(res: StandardHttpResponse): number {
         if (res.statusCode !== 200) {
             return res.statusCode;
+        }
+
+        if (res.body.indexOf("You are allowed to views the statistics of your own account alone.") > -1) {
+            return 401;
         }
 
         if (res.body.indexOf("This user has voluntarily disabled access to their userpage.") > -1) {
@@ -1127,6 +1131,103 @@ export class FurAffinityClient {
                 "items[]": ids,
             },
             "content-type": "application/x-www-form-urlencoded"
+        });
+    }
+
+    async * getSubmissionStats(username: string) {
+        let pageNum = 1;
+        while (true) {
+            const page = await this.getSubmissionStatsPage(username, pageNum);
+
+            if (page.statistics.length > 0) {
+                yield page;
+            } else {
+                return;
+            }
+
+            pageNum++;
+        }
+    }
+
+    getSubmissionStatsPage(username: string, page: number = 1) {
+        const pickText = (val: string, elem: cheerio.Cheerio) => {
+            return parseInt(elem.children().eq(1).text().trim() || "0", 10);
+        };
+        const textToInt = (val: any) => {
+            return parseInt(val.trim() || "0", 10);
+        };
+
+        return this.fetchAndScrape<SubmissionStatistics>(`/stats/${username}/submissions/${page}/`, {
+            "classic": {
+                "statistics": {
+                    "listItem": "table.maintable table.submissions>tbody>tr",
+                    "data": {
+                        "id": {
+                            "selector": `td.info ${FurAffinityClient.SELECTOR_VIEW}`,
+                            "attr": "href",
+                            "convert": FurAffinityClient.getViewPath
+                        },
+                        "submission_title": FurAffinityClient.SELECTOR_VIEW,
+                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
+                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
+                        "when": FurAffinityClient.pickWhenFromSpan("td.info span.popup_date"),
+                        "views": {
+                            "selector": `td.info dd:nth-child(2)`,
+                            "convert": pickText as any,
+                        },
+                        "favorites": {
+                            "selector": `td.info dd:nth-child(3)`,
+                            "convert": pickText as any,
+                        },
+                        "comments": {
+                            "selector": `td.info dd:nth-child(4)`,
+                            "convert": pickText as any,
+                        },
+                        "keywords": {
+                            "listItem": `td.info dd:nth-child(5) div.keywords > a`,
+                            "data": {
+                                "value": "",
+                            },
+                            "convert": (c: { value: string }) => c.value,
+                        },
+                    }
+                }
+            },
+            "beta": {
+                "statistics": {
+                    "listItem": "#standardpage div.stats-page",
+                    "data": {
+                        "id": {
+                            "selector": `.stats-page-submission-image ${FurAffinityClient.SELECTOR_VIEW}`,
+                            "attr": "href",
+                            "convert": FurAffinityClient.getViewPath
+                        },
+                        "submission_title": `.stats-page-submission-details ${FurAffinityClient.SELECTOR_VIEW}`,
+                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
+                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
+                        "when": FurAffinityClient.pickWhenFromSpan(".stats-page-submission-details span.popup_date"),
+                        "views": {
+                            "selector": `.submission-stats-container > .views > span:nth-child(1)`,
+                            "convert": textToInt,
+                        },
+                        "favorites": {
+                            "selector": `.submission-stats-container > .favorites > a > span`,
+                            "convert": textToInt,
+                        },
+                        "comments": {
+                            "selector": `.submission-stats-container > .comments > span:nth-child(1)`,
+                            "convert": textToInt,
+                        },
+                        "keywords": {
+                            "listItem": `.stats-page-submission-details span.tags > a`,
+                            "data": {
+                                "value": "",
+                            },
+                            "convert": (c: { value: string }) => c.value,
+                        },
+                    }
+                }
+            }
         });
     }
 

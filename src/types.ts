@@ -246,6 +246,22 @@ export interface Note {
 
 export type NoteMoveAction = "unread" | "restore" | "archive" | "trash";
 
+export interface SubmissionStatistic {
+    "id": number;
+    "submission_title": string;
+    "submission_url": string;
+    "thumb_url": string;
+    "when": Date;
+    "views": number;
+    "favorites": number;
+    "comments": number;
+    "keywords": string[];
+}
+
+export interface SubmissionStatistics {
+    "statistics": SubmissionStatistic[];
+}
+
 type AtLeastOne<T, U = { [K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U];
 
 export interface SearchQueryParams {
