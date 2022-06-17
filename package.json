@@ -1,6 +1,6 @@
 {
     "name": "fa.js",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "description": "FurAffinity interface for Javascript",
     "repository": {
         "type": "git",
