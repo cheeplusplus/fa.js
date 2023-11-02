@@ -1,9 +1,9 @@
 import * as cheerio from "cheerio";
 import * as datefns from "date-fns";
-import * as scrape from "scrape-it";
+import scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
-import { CloudscraperHttpClient } from "./httpclients";
 import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig, SubmissionStatistics } from "./types";
+import { FetchHttpClient } from "./httpclients";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -30,6 +30,8 @@ export class FurAffinityClient {
         if (typeof id === "object") {
             items = id.nav_items;
             id = id.id;
+        } else if (typeof id === "string") {
+            id = parseInt(id, 10);
         }
 
         if (!items || items.length < 1) {
@@ -61,7 +63,7 @@ export class FurAffinityClient {
         return navigation;
     }
 
-    private static readDateWhenField(field: string): Date {
+    private static readDateWhenField(field: string): Date | null {
         if (!field) {
             return null;
         }
@@ -233,7 +235,12 @@ export class FurAffinityClient {
                 }
 
                 if (title) {
-                    const titleVal = FurAffinityClient.readDateWhenField(ss.attr("title"));
+                    const attrVal = ss.attr("title");
+                    if (!attrVal) {
+                        return null;
+                    }
+
+                    const titleVal = FurAffinityClient.readDateWhenField(attrVal);
                     if (titleVal) {
                         return titleVal;
                     }
@@ -293,11 +300,13 @@ export class FurAffinityClient {
             this.cookies = config.cookies ?? undefined;
             this.throwErrors = config.throwErrors ?? false;
             this.disableRetry = config.disableRetry ?? false;
-            this.httpClient = config.httpClient;
+            if (config.httpClient) {
+                this.httpClient = config.httpClient;
+            }
         }
 
         if (!this.httpClient) {
-            this.httpClient = new CloudscraperHttpClient();
+            this.httpClient = new FetchHttpClient();
         }
     }
 
@@ -714,7 +723,7 @@ export class FurAffinityClient {
                 "content_url": {
                     "selector": "#page-submission",
                     "convert": ((v: any, element: any) => {
-                        let result: string;
+                        let result: string | undefined;
                         const typeFinderRoot = element.find("#submissionImg");
                         const type = getSubmissionType(typeFinderRoot);
                         if (type === "image") {
@@ -778,7 +787,7 @@ export class FurAffinityClient {
                 "content_url": {
                     "selector": "#submission_page",
                     "convert": ((v: any, element: any) => {
-                        let result: string;
+                        let result: string | undefined;
                         const typeFinderRoot = element.find("#submissionImg");
                         const type = getSubmissionType(typeFinderRoot);
                         if (type === "image") {
@@ -1536,7 +1545,7 @@ export class FurAffinityClient {
         return "classic";
     }
 
-    private async fetch(path: string, config: FetchConfig, attempt = 1): Promise<string> {
+    private async fetch(path: string, config?: FetchConfig, attempt = 1): Promise<string> {
         const url = `${FurAffinityClient.SITE_ROOT}${path}`;
         const res = await this.httpClient.fetch(url, {
             ...config,
@@ -1557,7 +1566,8 @@ export class FurAffinityClient {
                 return await this.fetch(url, config, attempt + 1);
             }
 
-            return null;
+            // TODO: Handle throwing errors differently
+            return "";
         }
 
         return res.body;

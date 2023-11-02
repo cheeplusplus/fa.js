@@ -1,9 +1,12 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es6",
-        "noImplicitAny": true,
+        "target": "es2018",
+        "lib": ["ES2018"],
         "moduleResolution": "node",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
         "declaration": true,
         "inlineSourceMap": true,
         "outDir": "build",
