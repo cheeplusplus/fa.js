@@ -532,7 +532,7 @@ export class FurAffinityClient {
                             "selector": "comment-user-text.comment_text",
                             "how": "html"
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan("comment_date > span.popup_date"),
+                        "when": FurAffinityClient.pickWhenFromSpan("comment-date > span.popup_date"),
                     }
                 }
             }
