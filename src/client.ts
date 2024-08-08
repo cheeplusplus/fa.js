@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 import * as datefns from "date-fns";
 import scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
-import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig, SubmissionStatistics } from "./types";
+import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig, SubmissionStatistics, SubmissionListing } from "./types";
 import { FetchHttpClient } from "./httpclients";
 
 // TODO: Rate limiting and backoff error handling
@@ -695,15 +695,17 @@ export class FurAffinityClient {
         });
     }
 
-    protected async * scrapeUserJournalPages(username: string, url: string) {
+    protected async * scrapeUserJournalPages(username: string, url: string): AsyncGenerator<Journals["journals"][0][], unknown, unknown> {
         while (true) {
             const page = await this.scrapeUserJournalPage(username, url);
 
             if (page.nextPage) {
                 yield page.journals;
                 url = page.nextPage;
+            } else if (page.journals.length > 0) {
+                return yield page.journals;
             } else {
-                return page.journals;
+                return;
             }
         }
     }
@@ -1361,7 +1363,7 @@ export class FurAffinityClient {
         return structure[mode];
     }
 
-    async * search(query: string, params?: Partial<SearchQueryParams>) {
+    async * search(query: string, params?: Partial<SearchQueryParams>): AsyncGenerator<SubmissionListing[], unknown, unknown> {
         let pageNum = 0;
         while (true) {
             pageNum++;
@@ -1369,8 +1371,10 @@ export class FurAffinityClient {
 
             if (page.more) {
                 yield page.submissions;
+            } else if (page.submissions.length > 0) {
+                return yield page.submissions;
             } else {
-                return page.submissions;
+                return;
             }
         }
     }
@@ -1461,15 +1465,17 @@ export class FurAffinityClient {
         return body;
     }
 
-    protected async * scrapeSubmissionPages(url: string) {
+    protected async * scrapeSubmissionPages(url: string): AsyncGenerator<SubmissionListing[], unknown, unknown> {
         while (true) {
             const page = await this.scrapeSubmissionsPage(url);
 
             if (page.nextPage) {
                 yield page.submissions;
                 url = page.nextPage;
+            } else if (page.submissions.length > 0) {
+                return yield page.submissions;
             } else {
-                return page.submissions;
+                return;
             }
         }
     }
@@ -1523,15 +1529,17 @@ export class FurAffinityClient {
         });
     }
 
-    protected async * scrapeUserGalleryPages(url: string, pageType: "gallery" | "scraps" | "favorites") {
+    protected async * scrapeUserGalleryPages(url: string, pageType: "gallery" | "scraps" | "favorites"): AsyncGenerator<SubmissionListing[], unknown, unknown> {
         while (true) {
             const page = await this.scrapeUserGalleryPage(url, pageType);
 
             if (page.nextPage) {
                 yield page.submissions;
                 url = page.nextPage;
+            } else if (page.submissions.length > 0) {
+                return yield page.submissions;
             } else {
-                return page.submissions;
+                return;
             }
         }
     }
