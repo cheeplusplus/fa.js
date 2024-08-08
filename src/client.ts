@@ -634,7 +634,14 @@ export class FurAffinityClient {
     }
 
     getUserJournals(username: string) {
-        const path = `/journals/${username}/`;
+        return this.scrapeUserJournalPages(username, `/journals/${username}`);
+    }
+
+    getUserJournalsPage(username: string, page: string | number) {
+        return this.scrapeUserJournalPage(username, `/journals/${username}/${page}`);
+    }
+
+    protected scrapeUserJournalPage(username: string, path: string) {
         return this.fetchAndScrape<Journals>(path, {
             "classic": {
                 "self_link": FurAffinityClient.pickStaticValue(path),
@@ -656,7 +663,9 @@ export class FurAffinityClient {
                         "when": FurAffinityClient.pickWhenFromSpan("td > span.popup_date"),
                         "comment_count": FurAffinityClient.pickWithRegex(parensMatchRegex, `${FurAffinityClient.SELECTOR_JOURNAL}:contains("Comments")`, undefined, undefined, true),
                     }
-                }
+                },
+                "nextPage": FurAffinityClient.pickLink("div.pagination a.older"),
+                "previousPage": FurAffinityClient.pickLink("div.pagination a.recent")
             },
             "beta": {
                 "self_link": FurAffinityClient.pickStaticValue(path),
@@ -681,9 +690,24 @@ export class FurAffinityClient {
                             "convert": FurAffinityClient.ensureIdIsNumber
                         }
                     }
-                }
+                },
+                "nextPage": FurAffinityClient.pickFormValue("div.sidebar form:has(>button:contains('Older'))"),
+                "previousPage": FurAffinityClient.pickFormValue("div.sidebar form:has(>button:contains('Newer'))")
             }
         });
+    }
+
+    protected async * scrapeUserJournalPages(username: string, url: string) {
+        while (true) {
+            const page = await this.scrapeUserJournalPage(username, url);
+
+            if (page.nextPage) {
+                yield page.journals;
+                url = page.nextPage;
+            } else {
+                return page.journals;
+            }
+        }
     }
 
     async getSubmission(id: FAID) {
@@ -1431,7 +1455,7 @@ export class FurAffinityClient {
         }
     }
 
-    protected async scrapeSubmissionsPage(path: string) {
+    protected scrapeSubmissionsPage(path: string) {
         return this.fetchAndScrape<SubmissionPage>(path, {
             "classic": {
                 "self_link": FurAffinityClient.pickStaticValue(path),

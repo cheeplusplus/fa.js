@@ -219,6 +219,8 @@ export interface Journals {
         "when": Date;
         "comment_count": number;
     }[];
+    "nextPage"?: string;
+    "previousPage"?: string;
 }
 
 export interface Notes {
