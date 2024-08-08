@@ -21,7 +21,7 @@
     },
     "dependencies": {
         "cheerio": "^1.0.0-rc.12",
-        "date-fns": "^2.30.0",
+        "date-fns": "^3.6.0",
         "scrape-it": "^6.1.0"
     }
 }
