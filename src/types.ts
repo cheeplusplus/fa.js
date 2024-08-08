@@ -87,7 +87,6 @@ export interface Navigation {
 export interface UserPage {
     "user_name": string; // Fancy version of username string
     "self_link": string;
-    "user_class": string;
     "user_thumb_url": string;
     "header_text": string;
     "header_html": string;
