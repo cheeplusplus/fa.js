@@ -1,3 +1,5 @@
+import type { StandardHttpResponse } from "./types";
+
 const ERROR_MATCHERS: { [errorText: string]: number } = {
     "Please log in": 401,
     "You are allowed to views the statistics of your own account alone": 403,

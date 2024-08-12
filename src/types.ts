@@ -1,39 +1,39 @@
 // Type definitions
 
-interface ClientConfig {
+export interface ClientConfig {
     cookies?: string;
     throwErrors?: boolean;
     disableRetry?: boolean;
     httpClient?: HttpClient;
 }
 
-interface HttpClient {
+export interface HttpClient {
     fetch(url: string, config?: HttpClientConfig): Promise<StandardHttpResponse>;
 }
 
-interface HttpClientConfig {
+export interface HttpClientConfig {
     cookies?: string;
     method?: "GET" | "POST";
     body?: { [key: string]: string | number | (string | number)[] };
     "content-type"?: string;
 }
 
-interface StandardHttpResponse {
+export interface StandardHttpResponse {
     statusCode: number;
     body: string;
 }
 
 // FA types
 
-type FAID = string | number;
+export type FAID = string | number;
 
-interface CommentText {
+export interface CommentText {
     "id": number;
     "body_text": string;
     "body_html": string;
 }
 
-interface Comment extends CommentText {
+export interface Comment extends CommentText {
     "self_link": string;
     "user_name": string;
     "user_url": string;
@@ -42,7 +42,7 @@ interface Comment extends CommentText {
     "when": Date;
 }
 
-interface SubmissionListing {
+export interface SubmissionListing {
     "id": number;
     "self_link": string;
     "title": string;
@@ -51,17 +51,17 @@ interface SubmissionListing {
     "when": Date;
 }
 
-interface Submissions {
+export interface Submissions {
     "self_link": string;
     "submissions": SubmissionListing[];
 }
 
-interface SubmissionPage extends Submissions {
+export interface SubmissionPage extends Submissions {
     "previousPage": string;
     "nextPage": string;
 }
 
-interface Submission {
+export interface Submission {
     "id": number;
     "self_link": string;
     "type": "image" | "flash" | "story" | "music";
@@ -79,12 +79,12 @@ interface Submission {
     "comments": Comment[];
 }
 
-interface Navigation {
+export interface Navigation {
     "previous"?: number;
     "next"?: number;
 }
 
-interface UserPage {
+export interface UserPage {
     "user_name": string; // Fancy version of username string
     "self_link": string;
     "user_thumb_url": string;
@@ -141,7 +141,7 @@ interface UserPage {
     }[];
 }
 
-interface Messages {
+export interface Messages {
     "my_username": string;
     "watches": {
         "id": number;
@@ -193,7 +193,7 @@ interface Messages {
     }[];
 }
 
-interface Watchlist {
+export interface Watchlist {
     "self_link": string;
     "user_name": string;
     "users": {
@@ -204,7 +204,7 @@ interface Watchlist {
     "previousPage"?: string;
 }
 
-interface Journal {
+export interface Journal {
     "id": number;
     "self_link": string;
     "title": string;
@@ -217,7 +217,7 @@ interface Journal {
     "comments": Comment[];
 }
 
-interface Journals {
+export interface Journals {
     "self_link": string;
     "user_name": string;
     "journals": {
@@ -233,7 +233,7 @@ interface Journals {
     "previousPage"?: string;
 }
 
-interface Notes {
+export interface Notes {
     "notes": {
         "id": number;
         "self_link": string;
@@ -245,7 +245,7 @@ interface Notes {
     }[];
 }
 
-interface Note {
+export interface Note {
     "id": number;
     "self_link": string;
     "title": string;
@@ -256,9 +256,9 @@ interface Note {
     "when": Date;
 }
 
-type NoteMoveAction = "unread" | "restore" | "archive" | "trash";
+export type NoteMoveAction = "unread" | "restore" | "archive" | "trash";
 
-interface SubmissionStatistic {
+export interface SubmissionStatistic {
     "id": number;
     "submission_title": string;
     "submission_url": string;
@@ -270,13 +270,13 @@ interface SubmissionStatistic {
     "keywords": string[];
 }
 
-interface SubmissionStatistics {
+export interface SubmissionStatistics {
     "statistics": SubmissionStatistic[];
 }
 
 type AtLeastOne<T, U = { [K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U];
 
-interface SearchQueryParams {
+export interface SearchQueryParams {
     "perpage": SearchQueryBody['perpage'];
     "order_by": SearchQueryBody['order-by'];
     "order_dir": SearchQueryBody['order-direction'];
@@ -297,7 +297,7 @@ interface SearchQueryParams {
     "mode": SearchQueryBody["mode"];
 }
 
-type SearchQueryBody = {
+export type SearchQueryBody = {
     "q": string;
     "page": number;
     "perpage": 24 | 48 | 72;
@@ -317,14 +317,14 @@ type SearchQueryBody = {
     "mode": "any" | "all" | "extended";
 };
 
-interface SearchPage {
+export interface SearchPage {
     "submissions": SubmissionListing[];
     "more": boolean;
 }
 
 // Meta
 
-interface TypedScrapeOptionList<T> {
+export interface TypedScrapeOptionList<T> {
     "listItem": string;
     "data"?: TypedScrapeOptions<T>;
     "convert"?: (value: any) => any;
@@ -338,10 +338,10 @@ type TypedScrapeOptions<T> = {
     [P in keyof T]: string | TypedScrapeOptionList<Unarray<T[P]>> | import("scrape-it").ScrapeOptionElement;
 } | { "value"?: any };
 
-interface DualScrapeOptions<T> {
+export interface DualScrapeOptions<T> {
     "classic": TypedScrapeOptions<T>;
     "beta": TypedScrapeOptions<T>;
     "configuration"?: FetchConfig;
 }
 
-type FetchConfig = Pick<HttpClientConfig, 'method' | 'body' | 'content-type'>;
+export type FetchConfig = Pick<HttpClientConfig, 'method' | 'body' | 'content-type'>;

@@ -1,3 +1,5 @@
+import type { HttpClient, HttpClientConfig } from "../types";
+
 export class FetchHttpClient implements HttpClient {
     async fetch(url: string, config: HttpClientConfig) {
         const headers = new Headers();

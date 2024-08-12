@@ -1,4 +1,5 @@
 import * as datefns from "date-fns";
+import type { FAID } from "./types";
 
 const viewRegex = /\/view\/(\d+)/;
 const journalRegex = /\/journal\/(\d+)/;

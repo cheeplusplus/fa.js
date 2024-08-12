@@ -3,6 +3,7 @@ import scrape from "scrape-it";
 import { checkErrors, FurAffinityError } from "./errors";
 import { FetchHttpClient } from "./httpclients";
 import { colonPostMatchRegex, colonPreMatchRegex, delay, ensureIdIsNumber, fixFaUrl, getJournalPath, getViewPath, parensMatchRegex, parensNumberMatchRegex, pick, pickCheckboxValue, pickDateFromThumbnail, pickFigureId, pickFormValue, pickImage, pickLink, pickStaticValue, pickWhenFromSpan, pickWithRegex, SELECTOR_JOURNAL, SELECTOR_THUMB, SELECTOR_USER, SELECTOR_VIEW, SITE_ROOT } from "./utils";
+import type { HttpClient, ClientConfig, UserPage, Journals, FAID, Submission, Messages, Journal, Notes, Note, NoteMoveAction, SubmissionStatistics, CommentText, TypedScrapeOptionList, Comment, SearchQueryParams, SubmissionListing, SearchPage, SearchQueryBody, SubmissionPage, FetchConfig, DualScrapeOptions, Watchlist } from "./types";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
