@@ -11,190 +11,199 @@ export const colonPostMatchRegex = /: (.*?)$/;
 export const colonPreMatchRegex = /^(.*?):$/;
 
 const dateFormats = [
-    "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
-    "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
-    "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
+  "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
+  "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
+  "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
 ];
 
 export const SITE_ROOT = "https://www.furaffinity.net";
 
-export const SELECTOR_USER = "a[href*=\"/user/\"]";
-export const SELECTOR_VIEW = "a[href*=\"/view/\"]";
-export const SELECTOR_JOURNAL = "a[href*=\"/journal/\"]";
-export const SELECTOR_THUMB = "img[src*=\"//t.furaffinity.net/\"]";
+export const SELECTOR_USER = 'a[href*="/user/"]';
+export const SELECTOR_VIEW = 'a[href*="/view/"]';
+export const SELECTOR_JOURNAL = 'a[href*="/journal/"]';
+export const SELECTOR_THUMB = 'img[src*="//t.furaffinity.net/"]';
 
 function readDateWhenField(field: string): Date | null {
-    if (!field) {
-        return null;
-    }
-
-    // Strip out field prefix
-    if (field.startsWith("on ")) {
-        field = field.substring(3);
-    }
-
-    // Try all known date formats
-    for (const format of dateFormats) {
-        const parsedDate = datefns.parse(field, format, new Date());
-        if (datefns.isValid(parsedDate)) {
-            return parsedDate;
-        }
-    }
-
+  if (!field) {
     return null;
+  }
+
+  // Strip out field prefix
+  if (field.startsWith("on ")) {
+    field = field.substring(3);
+  }
+
+  // Try all known date formats
+  for (const format of dateFormats) {
+    const parsedDate = datefns.parse(field, format, new Date());
+    if (datefns.isValid(parsedDate)) {
+      return parsedDate;
+    }
+  }
+
+  return null;
 }
 
 export function delay(ms: number) {
-    return new Promise((r) => {
-        setTimeout(r, ms);
-    });
+  return new Promise((r) => {
+    setTimeout(r, ms);
+  });
 }
 
 export function fixFaUrl(str: string) {
-    if (!str) {
-        return str;
-    }
+  if (!str) {
+    return str;
+  }
 
-    if (str.startsWith("//")) {
-        return `https:${str}`;
-    } else {
-        return str;
-    }
+  if (str.startsWith("//")) {
+    return `https:${str}`;
+  } else {
+    return str;
+  }
 }
 
 export function getViewPath(str: string) {
-    const matches = viewRegex.exec(str);
-    if (!matches || matches.length < 2) {
-        return null;
-    }
-    return parseInt(matches[1]);
+  const matches = viewRegex.exec(str);
+  if (!matches || matches.length < 2) {
+    return null;
+  }
+  return parseInt(matches[1]);
 }
 
 export function getJournalPath(str: string) {
-    const matches = journalRegex.exec(str);
-    if (!matches || matches.length < 2) {
-        return null;
-    }
-    return parseInt(matches[1]);
+  const matches = journalRegex.exec(str);
+  if (!matches || matches.length < 2) {
+    return null;
+  }
+  return parseInt(matches[1]);
 }
 
 export function pick(selector: string, attr: string) {
-    return {
-        selector,
-        attr,
-        "convert": fixFaUrl
-    };
+  return {
+    selector,
+    attr,
+    convert: fixFaUrl,
+  };
 }
 
 export function pickLink(selector: string = "a") {
-    return pick(selector, "href");
+  return pick(selector, "href");
 }
 
 export function pickImage(selector: string = "img", attr = "src") {
-    return pick(selector, attr);
+  return pick(selector, attr);
 }
 
 export function pickFormValue(selector: string = "form") {
-    return pick(selector, "action");
+  return pick(selector, "action");
 }
 
 export function pickCheckboxValue(selector: string = "input[type='checkbox']") {
-    return {
-        selector,
-        "attr": "value",
-        "convert": parseInt
-    };
+  return {
+    selector,
+    attr: "value",
+    convert: parseInt,
+  };
 }
 
 export function pickFigureId() {
-    return {
-        "attr": "id",
-        "convert": (sid: string) => {
-            return parseInt(sid.split("-")[1]);
-        }
-    };
+  return {
+    attr: "id",
+    convert: (sid: string) => {
+      return parseInt(sid.split("-")[1]);
+    },
+  };
 }
 
-export function pickDateFromThumbnail(selector: string = "img", attr: string = "src") {
-    return {
-        selector,
-        attr,
-        "convert": (source: string) => {
-            const res = thumbnailRegex.exec(source);
-            if (!res || res.length < 4) {
-                return undefined;
-            }
+export function pickDateFromThumbnail(
+  selector: string = "img",
+  attr: string = "src"
+) {
+  return {
+    selector,
+    attr,
+    convert: (source: string) => {
+      const res = thumbnailRegex.exec(source);
+      if (!res || res.length < 4) {
+        return undefined;
+      }
 
-            const timestamp = parseInt(res[3], 10);
-            return new Date(timestamp * 1000);
-        }
-    };
+      const timestamp = parseInt(res[3], 10);
+      return new Date(timestamp * 1000);
+    },
+  };
 }
 
 export function pickWhenFromSpan(selector: string) {
-    return {
-        selector,
-        "how": (source: cheerio.Selector) => {
-            // scrape-it has bad typings
-            const ss = source as unknown as cheerio.Cheerio;
-            const text = ss.text();
-            const title = ss.attr("title");
+  return {
+    selector,
+    how: (source: cheerio.Selector) => {
+      // scrape-it has bad typings
+      const ss = source as unknown as cheerio.Cheerio;
+      const text = ss.text();
+      const title = ss.attr("title");
 
-            if (text) {
-                const textVal = readDateWhenField(text);
-                if (textVal) {
-                    return textVal;
-                }
-            }
+      if (text) {
+        const textVal = readDateWhenField(text);
+        if (textVal) {
+          return textVal;
+        }
+      }
 
-            if (title) {
-                const attrVal = ss.attr("title");
-                if (!attrVal) {
-                    return null;
-                }
+      if (title) {
+        const attrVal = ss.attr("title");
+        if (!attrVal) {
+          return null;
+        }
 
-                const titleVal = readDateWhenField(attrVal);
-                if (titleVal) {
-                    return titleVal;
-                }
-            }
+        const titleVal = readDateWhenField(attrVal);
+        if (titleVal) {
+          return titleVal;
+        }
+      }
 
-            return null;
-        },
-    };
+      return null;
+    },
+  };
 }
 
-export function pickWithRegex(regex: RegExp, selector?: string, attr?: string, position: number = 1, asNumber?: boolean) {
-    return {
-        selector,
-        attr,
-        "convert": (text: string) => {
-            const res = regex.exec(text);
-            if (!res || res.length < position + 1) {
-                return undefined;
-            }
+export function pickWithRegex(
+  regex: RegExp,
+  selector?: string,
+  attr?: string,
+  position: number = 1,
+  asNumber?: boolean
+) {
+  return {
+    selector,
+    attr,
+    convert: (text: string) => {
+      const res = regex.exec(text);
+      if (!res || res.length < position + 1) {
+        return undefined;
+      }
 
-            const val = res[position];
-            if (asNumber) {
-                return parseInt(val);
-            }
+      const val = res[position];
+      if (asNumber) {
+        return parseInt(val);
+      }
 
-            return val;
-        }
-    };
+      return val;
+    },
+  };
 }
 
 export function pickStaticValue<T>(value: T) {
-    return {
-        "selector": ":root",
-        "how": () => value,
-    };
+  return {
+    selector: ":root",
+    how: () => value,
+  };
 }
 
 export function ensureIdIsNumber(id: FAID): number {
-    if (typeof id === "number") {
-        return id;
-    }
+  if (typeof id === "number") {
+    return id;
+  }
 
-    return parseInt(id, 10);
+  return parseInt(id, 10);
 }
