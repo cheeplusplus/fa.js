@@ -1,290 +1,14 @@
 import * as cheerio from "cheerio";
-import * as datefns from "date-fns";
 import scrape from "scrape-it";
 import { FurAffinityError } from "./errors";
-import type { ClientConfig, Comment, DualScrapeOptions, FAID, HttpClient, Journal, Messages, Navigation, Note, Notes, StandardHttpResponse, Submission, SubmissionPage, TypedScrapeOptionList, Journals, UserPage, CommentText, SearchPage, SearchQueryParams, SearchQueryBody, NoteMoveAction, FetchConfig, SubmissionStatistics, SubmissionListing } from "./types";
 import { FetchHttpClient } from "./httpclients";
+import { checkErrors, colonPostMatchRegex, colonPreMatchRegex, delay, ensureIdIsNumber, fixFaUrl, getJournalPath, getViewPath, parensMatchRegex, parensNumberMatchRegex, pick, pickCheckboxValue, pickDateFromThumbnail, pickFigureId, pickFormValue, pickImage, pickLink, pickStaticValue, pickWhenFromSpan, pickWithRegex, SELECTOR_JOURNAL, SELECTOR_THUMB, SELECTOR_USER, SELECTOR_VIEW, SITE_ROOT } from "./utils";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
 
-const thumbnailRegex = /^\/\/t\.facdn\.net\/(\d+)@(\d+)-(\d+)/;
-const parensMatchRegex = /\((\S*?)\)/;
-const parensNumberMatchRegex = /\((\d+).*\)/;
-const colonPostMatchRegex = /: (.*?)$/;
-const colonPreMatchRegex = /^(.*?):$/;
-const dateFormats = [
-    "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
-    "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
-    "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
-];
-
 export class FurAffinityClient {
-    public static SITE_ROOT = "https://www.furaffinity.net";
     public static LAST_SEEN_SITE_VERSION: string;
-
-    /** Determine the navigation directions from a submission. */
-    public static getNavigationFromSubmission(submission: Submission): Navigation;
-    public static getNavigationFromSubmission(id: FAID, items: number[]): Navigation;
-    public static getNavigationFromSubmission(id: FAID | Submission, items?: number[]): Navigation {
-        if (typeof id === "object") {
-            items = id.nav_items;
-            id = id.id;
-        } else if (typeof id === "string") {
-            id = parseInt(id, 10);
-        }
-
-        if (!items || items.length < 1) {
-            return {};
-        }
-
-        const allIds = items.sort();
-
-        let prevId = -1;
-        let nextId = -1;
-        for (const curId of allIds) {
-            if (curId > id) {
-                nextId = curId;
-                break;
-            } else {
-                prevId = curId;
-            }
-        }
-
-        const navigation: Navigation = {};
-
-        if (prevId > -1) {
-            navigation.previous = prevId;
-        }
-        if (nextId > -1) {
-            navigation.next = nextId;
-        }
-
-        return navigation;
-    }
-
-    private static readDateWhenField(field: string): Date | null {
-        if (!field) {
-            return null;
-        }
-
-        // Strip out field prefix
-        if (field.startsWith("on ")) {
-            field = field.substr(3);
-        }
-
-        // Try all known date formats
-        for (const format of dateFormats) {
-            const parsedDate = datefns.parse(field, format, new Date());
-            if (datefns.isValid(parsedDate)) {
-                return parsedDate;
-            }
-        }
-
-        return null;
-    }
-
-    private static checkErrors(res: StandardHttpResponse): number {
-        if (res.statusCode !== 200) {
-            return res.statusCode;
-        }
-
-        if (res.body.indexOf("You are allowed to views the statistics of your own account alone.") > -1) {
-            return 401;
-        }
-
-        if (res.body.indexOf("This user has voluntarily disabled access to their userpage.") > -1) {
-            return 403;
-        }
-
-        if (res.body.indexOf("The submission you are trying to find is not in our database.") > -1) {
-            return 404;
-        }
-
-        if (res.body.indexOf("The journal you are trying to find is not in our database.") > -1) {
-            return 404;
-        }
-
-        if (res.body.indexOf("This user cannot be found.") > -1) {
-            return 404;
-        }
-
-        if (res.body.indexOf("was not found in our database") > -1) {
-            return 404;
-        }
-
-        if (res.body.indexOf("For more information please check the") > -1) {
-            return 500;
-        }
-
-        if (res.body.indexOf("The server is currently having difficulty responding to all requests.") > -1) {
-            return 503;
-        }
-
-        return 200;
-    }
-
-    private static SELECTOR_USER = "a[href*=\"/user/\"]";
-    private static SELECTOR_VIEW = "a[href*=\"/view/\"]";
-    private static SELECTOR_JOURNAL = "a[href*=\"/journal/\"]";
-    private static SELECTOR_THUMB = "img[src*=\"//t.furaffinity.net/\"]";
-
-    private static delay(ms: number) {
-        return new Promise((r) => {
-            setTimeout(r, ms);
-        });
-    }
-
-    private static fixFaUrl(str: string) {
-        if (!str) {
-            return str;
-        }
-
-        if (str.startsWith("//")) {
-            return `https:${str}`;
-        } else {
-            return str;
-        }
-    }
-
-    private static getViewPath(str: string) {
-        const rr = /\/view\/(\d+)/;
-        const matches = rr.exec(str);
-        if (!matches || matches.length < 2) {
-            return null;
-        }
-        return parseInt(matches[1]);
-    }
-
-    private static getJournalPath(str: string) {
-        const rr = /\/journal\/(\d+)/;
-        const matches = rr.exec(str);
-        if (!matches || matches.length < 2) {
-            return null;
-        }
-        return parseInt(matches[1]);
-    }
-
-    private static pick(selector: string, attr: string) {
-        return {
-            selector,
-            attr,
-            "convert": FurAffinityClient.fixFaUrl
-        };
-    }
-
-    private static pickLink(selector: string = "a") {
-        return FurAffinityClient.pick(selector, "href");
-    }
-
-    private static pickImage(selector: string = "img", attr = "src") {
-        return FurAffinityClient.pick(selector, attr);
-    }
-
-    private static pickFormValue(selector: string = "form") {
-        return FurAffinityClient.pick(selector, "action");
-    }
-
-    private static pickCheckboxValue(selector: string = "input[type='checkbox']") {
-        return {
-            selector,
-            "attr": "value",
-            "convert": parseInt
-        };
-    }
-
-    private static pickFigureId() {
-        return {
-            "attr": "id",
-            "convert": (sid: string) => {
-                return parseInt(sid.split("-")[1]);
-            }
-        };
-    }
-
-    private static pickDateFromThumbnail(selector: string = "img", attr: string = "src") {
-        return {
-            selector,
-            attr,
-            "convert": (source: string) => {
-                const res = thumbnailRegex.exec(source);
-                if (!res || res.length < 4) {
-                    return undefined;
-                }
-
-                const timestamp = parseInt(res[3], 10);
-                return new Date(timestamp * 1000);
-            }
-        };
-    }
-
-    private static pickWhenFromSpan(selector: string) {
-        return {
-            selector,
-            "how": (source: cheerio.Selector) => {
-                // scrape-it has bad typings
-                const ss = source as unknown as cheerio.Cheerio;
-                const text = ss.text();
-                const title = ss.attr("title");
-
-                if (text) {
-                    const textVal = FurAffinityClient.readDateWhenField(text);
-                    if (textVal) {
-                        return textVal;
-                    }
-                }
-
-                if (title) {
-                    const attrVal = ss.attr("title");
-                    if (!attrVal) {
-                        return null;
-                    }
-
-                    const titleVal = FurAffinityClient.readDateWhenField(attrVal);
-                    if (titleVal) {
-                        return titleVal;
-                    }
-                }
-
-                return null;
-            },
-        };
-    }
-
-    private static pickWithRegex(regex: RegExp, selector?: string, attr?: string, position: number = 1, asNumber?: boolean) {
-        return {
-            selector,
-            attr,
-            "convert": (text: string) => {
-                const res = regex.exec(text);
-                if (!res || res.length < position + 1) {
-                    return undefined;
-                }
-
-                const val = res[position];
-                if (asNumber) {
-                    return parseInt(val);
-                }
-
-                return val;
-            }
-        };
-    }
-
-    private static pickStaticValue<T>(value: T) {
-        return {
-            "selector": ":root",
-            "how": () => value,
-        };
-    }
-
-    private static ensureIdIsNumber(id: FAID): number {
-        if (typeof id === "number") {
-            return id;
-        }
-
-        return parseInt(id, 10);
-    }
 
     private cookies?: string;
     private throwErrors?: boolean;
@@ -348,7 +72,7 @@ export class FurAffinityClient {
 
         const base = this.scrape<Omit<UserPage, 'featured_submission' | 'top_journal' | 'profile_id'>>(body, {
             "classic": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "user_name": {
                     "selector": "#page-userpage table.maintable > tbody tr td.lead b",
                     "convert": (text: string) => {
@@ -358,7 +82,7 @@ export class FurAffinityClient {
                         return text;
                     }
                 },
-                "user_thumb_url": FurAffinityClient.pickImage(`#page-userpage ${FurAffinityClient.SELECTOR_USER} > img.avatar`),
+                "user_thumb_url": pickImage(`#page-userpage ${SELECTOR_USER} > img.avatar`),
                 "header_text": "#page-userpage > tbody > tr:nth-child(1) > td > table > tbody > tr > td > table > tbody > tr > td > table > tbody > tr:nth-child(3) > td.alt1 > table > tbody > tr > td:nth-child(1)",
                 "header_html": {
                     "selector": "#page-userpage > tbody > tr:nth-child(1) > td > table > tbody > tr > td > table > tbody > tr > td > table > tbody > tr:nth-child(3) > td.alt1 > table > tbody > tr > td:nth-child(1)",
@@ -372,33 +96,33 @@ export class FurAffinityClient {
                 "latest_submissions": {
                     "listItem": "#gallery-latest-submissions figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} img`)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} img`)
                     }
                 },
                 "favorites": {
                     "listItem": "#gallery-latest-favorites figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} img`)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} img`)
                     }
                 },
                 "artist_information": {
                     "listItem": "table > tbody > tr > td.user-info div.user-info-item",
                     "data": {
                         "title": "strong",
-                        "value": FurAffinityClient.pickWithRegex(colonPostMatchRegex)
+                        "value": pickWithRegex(colonPostMatchRegex)
                     }
                 },
                 "contact_information": {
                     "listItem": "table > tbody > tr > td.user-contacts .classic-contact-info-item",
                     "data": {
-                        "service": FurAffinityClient.pickWithRegex(colonPreMatchRegex, ".contact-service-name > strong"),
-                        "link": FurAffinityClient.pickLink(),
+                        "service": pickWithRegex(colonPreMatchRegex, ".contact-service-name > strong"),
+                        "link": pickLink(),
                         "value": {
                             "convert": (val: string, elem: any) => {
                                 if (elem.children()[1]) {
@@ -419,20 +143,20 @@ export class FurAffinityClient {
                                 return parseInt(value.split("-")[1]);
                             }
                         },
-                        "user_name": `.from-header > ${FurAffinityClient.SELECTOR_USER}`,
-                        "user_url": FurAffinityClient.pickLink(`.from-header > ${FurAffinityClient.SELECTOR_USER}`),
-                        "user_thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_USER} > img.avatar`),
+                        "user_name": `.from-header > ${SELECTOR_USER}`,
+                        "user_url": pickLink(`.from-header > ${SELECTOR_USER}`),
+                        "user_thumb_url": pickImage(`${SELECTOR_USER} > img.avatar`),
                         "body_text": "div.no_overflow",
                         "body_html": {
                             "selector": "div.no_overflow",
                             "how": "html"
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan("td > span.popup_date"),
+                        "when": pickWhenFromSpan("td > span.popup_date"),
                     }
                 }
             },
             "beta": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "user_name": {
                     "selector": "#pageid-userpage userpage-nav-header > userpage-nav-user-details > h1 > username",
                     "convert": (text: string) => {
@@ -442,7 +166,7 @@ export class FurAffinityClient {
                         return text;
                     }
                 },
-                "user_thumb_url": FurAffinityClient.pickImage(`#pageid-userpage userpage-nav-header > userpage-nav-avatar > ${FurAffinityClient.SELECTOR_USER} > img`),
+                "user_thumb_url": pickImage(`#pageid-userpage userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER} > img`),
                 "header_text": "#page-userpage .userpage-layout-profile-container div.userpage-profile",
                 "header_html": {
                     "selector": "#page-userpage .userpage-layout-profile-container div.userpage-profile",
@@ -456,19 +180,19 @@ export class FurAffinityClient {
                 "latest_submissions": {
                     "listItem": "#gallery-latest-submissions figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} > img`)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} > img`)
                     }
                 },
                 "favorites": {
                     "listItem": "#gallery-latest-favorites figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} > img`)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} > img`)
                     }
                 },
                 "artist_information": {
@@ -496,7 +220,7 @@ export class FurAffinityClient {
                     "listItem": "#userpage-contact div.user-contact-item div.user-contact-user-info",
                     "data": {
                         "service": "strong",
-                        "link": FurAffinityClient.pickLink(),
+                        "link": pickLink(),
                         "value": {
                             "convert": (val: string, elem: any) => {
                                 if (elem.children()[2]) {
@@ -524,15 +248,15 @@ export class FurAffinityClient {
                                 return parseInt(value.split("-")[1]);
                             }
                         },
-                        "user_name": `comment-username ${FurAffinityClient.SELECTOR_USER} > h3`,
-                        "user_url": FurAffinityClient.pickLink(`comment-username ${FurAffinityClient.SELECTOR_USER}`),
-                        "user_thumb_url": FurAffinityClient.pickImage(`comment-container > div.avatar > ${FurAffinityClient.SELECTOR_USER} > img`),
+                        "user_name": `comment-username ${SELECTOR_USER} > h3`,
+                        "user_url": pickLink(`comment-username ${SELECTOR_USER}`),
+                        "user_thumb_url": pickImage(`comment-container > div.avatar > ${SELECTOR_USER} > img`),
                         "body_text": "comment-user-text.comment_text",
                         "body_html": {
                             "selector": "comment-user-text.comment_text",
                             "how": "html"
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan("comment-date > span.popup_date"),
+                        "when": pickWhenFromSpan("comment-date > span.popup_date"),
                     }
                 }
             }
@@ -546,19 +270,19 @@ export class FurAffinityClient {
                     "attr": "id",
                     "convert": (s: string) => parseInt(s.split("_")[1])
                 },
-                "self_link": FurAffinityClient.pickLink(`#featured-submission ${FurAffinityClient.SELECTOR_VIEW}`),
+                "self_link": pickLink(`#featured-submission ${SELECTOR_VIEW}`),
                 "title": "#featured-submission b > span",
-                "thumb_url": FurAffinityClient.pickImage(`#featured-submission ${FurAffinityClient.SELECTOR_VIEW} > img`),
+                "thumb_url": pickImage(`#featured-submission ${SELECTOR_VIEW} > img`),
             },
             "beta": {
                 "id": {
-                    "selector": `${featuredSubmissionCellBeta} ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "selector": `${featuredSubmissionCellBeta} ${SELECTOR_VIEW}`,
                     "attr": "href",
-                    "convert": FurAffinityClient.getViewPath
+                    "convert": getViewPath
                 },
-                "self_link": FurAffinityClient.pickLink(`${featuredSubmissionCellBeta} ${FurAffinityClient.SELECTOR_VIEW}`),
-                "title": `${featuredSubmissionCellBeta} div.userpage-featured-title ${FurAffinityClient.SELECTOR_VIEW}`,
-                "thumb_url": FurAffinityClient.pickImage(`${featuredSubmissionCellBeta} ${FurAffinityClient.SELECTOR_VIEW} > img`)
+                "self_link": pickLink(`${featuredSubmissionCellBeta} ${SELECTOR_VIEW}`),
+                "title": `${featuredSubmissionCellBeta} div.userpage-featured-title ${SELECTOR_VIEW}`,
+                "thumb_url": pickImage(`${featuredSubmissionCellBeta} ${SELECTOR_VIEW} > img`)
             }
         });
 
@@ -567,35 +291,35 @@ export class FurAffinityClient {
         const topJournal = this.scrape<UserPage["top_journal"]>(body, {
             "classic": {
                 "id": {
-                    "selector": `${topJournalCellClassic} b > ${FurAffinityClient.SELECTOR_JOURNAL}`,
+                    "selector": `${topJournalCellClassic} b > ${SELECTOR_JOURNAL}`,
                     "attr": "href",
-                    "convert": FurAffinityClient.getJournalPath
+                    "convert": getJournalPath
                 },
-                "self_link": FurAffinityClient.pickLink(`${topJournalCellClassic} b > ${FurAffinityClient.SELECTOR_JOURNAL}`),
-                "title": `${topJournalCellClassic} b > ${FurAffinityClient.SELECTOR_JOURNAL}`,
+                "self_link": pickLink(`${topJournalCellClassic} b > ${SELECTOR_JOURNAL}`),
+                "title": `${topJournalCellClassic} b > ${SELECTOR_JOURNAL}`,
                 "body_text": `${topJournalCellClassic} .journal-body`,
                 "body_html": {
                     "selector": `${topJournalCellClassic} .journal-body`,
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan(`${topJournalCellClassic} td > span.popup_date`),
-                "comment_count": FurAffinityClient.pickWithRegex(parensMatchRegex, `${topJournalCellClassic} ${FurAffinityClient.SELECTOR_JOURNAL}:contains("Comments")`, undefined, undefined, true)
+                "when": pickWhenFromSpan(`${topJournalCellClassic} td > span.popup_date`),
+                "comment_count": pickWithRegex(parensMatchRegex, `${topJournalCellClassic} ${SELECTOR_JOURNAL}:contains("Comments")`, undefined, undefined, true)
             },
             "beta": {
                 "id": {
-                    "selector": `${topJournalCellBeta} ${FurAffinityClient.SELECTOR_JOURNAL}`,
+                    "selector": `${topJournalCellBeta} ${SELECTOR_JOURNAL}`,
                     "attr": "href",
-                    "convert": FurAffinityClient.getJournalPath
+                    "convert": getJournalPath
                 },
-                "self_link": FurAffinityClient.pickLink(`${topJournalCellBeta} ${FurAffinityClient.SELECTOR_JOURNAL}`),
+                "self_link": pickLink(`${topJournalCellBeta} ${SELECTOR_JOURNAL}`),
                 "title": `${topJournalCellBeta} .section-body > h2`,
                 "body_text": `${topJournalCellBeta} .section-body > div.user-submitted-links`,
                 "body_html": {
                     "selector": `${topJournalCellBeta} .section-body > div.user-submitted-links`,
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan(`${topJournalCellBeta} .section-body span.popup_date`),
-                "comment_count": FurAffinityClient.pickWithRegex(parensNumberMatchRegex, `${topJournalCellBeta} ${FurAffinityClient.SELECTOR_JOURNAL} span`, undefined, undefined, true)
+                "when": pickWhenFromSpan(`${topJournalCellBeta} .section-body span.popup_date`),
+                "comment_count": pickWithRegex(parensNumberMatchRegex, `${topJournalCellBeta} ${SELECTOR_JOURNAL} span`, undefined, undefined, true)
             }
         });
 
@@ -603,23 +327,23 @@ export class FurAffinityClient {
         const profileId = this.scrape<UserPage["profile_id"]>(body, {
             "classic": {
                 "id": {
-                    "selector": `#profilepic-submission ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "selector": `#profilepic-submission ${SELECTOR_VIEW}`,
                     "attr": "href",
-                    "convert": FurAffinityClient.getViewPath
+                    "convert": getViewPath
                 },
-                "self_link": FurAffinityClient.pickLink(`#profilepic-submission ${FurAffinityClient.SELECTOR_VIEW}`),
-                "thumb_url": FurAffinityClient.pickImage(`#profilepic-submission ${FurAffinityClient.SELECTOR_VIEW} > img`),
-                "when": FurAffinityClient.pickDateFromThumbnail(`#profilepic-submission ${FurAffinityClient.SELECTOR_VIEW} > img`)
+                "self_link": pickLink(`#profilepic-submission ${SELECTOR_VIEW}`),
+                "thumb_url": pickImage(`#profilepic-submission ${SELECTOR_VIEW} > img`),
+                "when": pickDateFromThumbnail(`#profilepic-submission ${SELECTOR_VIEW} > img`)
             },
             "beta": {
                 "id": {
-                    "selector": `${profileIdCellBeta} ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "selector": `${profileIdCellBeta} ${SELECTOR_VIEW}`,
                     "attr": "href",
-                    "convert": FurAffinityClient.getViewPath
+                    "convert": getViewPath
                 },
-                "self_link": FurAffinityClient.pickLink(`${profileIdCellBeta} ${FurAffinityClient.SELECTOR_VIEW}`),
-                "thumb_url": FurAffinityClient.pickImage(`${profileIdCellBeta} ${FurAffinityClient.SELECTOR_VIEW} > img`),
-                "when": FurAffinityClient.pickDateFromThumbnail(`${profileIdCellBeta} ${FurAffinityClient.SELECTOR_VIEW} > img`)
+                "self_link": pickLink(`${profileIdCellBeta} ${SELECTOR_VIEW}`),
+                "thumb_url": pickImage(`${profileIdCellBeta} ${SELECTOR_VIEW} > img`),
+                "when": pickDateFromThumbnail(`${profileIdCellBeta} ${SELECTOR_VIEW} > img`)
             }
         });
 
@@ -642,8 +366,8 @@ export class FurAffinityClient {
     protected scrapeUserJournalPage(username: string, path: string) {
         return this.fetchAndScrape<Journals>(path, {
             "classic": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
-                "user_name": FurAffinityClient.pickStaticValue(username),
+                "self_link": pickStaticValue(path),
+                "user_name": pickStaticValue(username),
                 "journals": {
                     "listItem": "table.page-journals-list table.maintable[id*='jid:']",
                     "data": {
@@ -651,23 +375,23 @@ export class FurAffinityClient {
                             "attr": "id",
                             "convert": (s: string) => parseInt(s.split(":")[1])
                         },
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
-                        "title": `tbody > tr > td > div.no_overflow ${FurAffinityClient.SELECTOR_JOURNAL}`,
+                        "self_link": pickLink(SELECTOR_JOURNAL),
+                        "title": `tbody > tr > td > div.no_overflow ${SELECTOR_JOURNAL}`,
                         "body_text": "tbody > tr > td > div.no_overflow.alt1",
                         "body_html": {
                             "selector": "tbody > tr > td > div.no_overflow.alt1",
                             "how": "html"
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan("td > span.popup_date"),
-                        "comment_count": FurAffinityClient.pickWithRegex(parensMatchRegex, `${FurAffinityClient.SELECTOR_JOURNAL}:contains("Comments")`, undefined, undefined, true),
+                        "when": pickWhenFromSpan("td > span.popup_date"),
+                        "comment_count": pickWithRegex(parensMatchRegex, `${SELECTOR_JOURNAL}:contains("Comments")`, undefined, undefined, true),
                     }
                 },
-                "nextPage": FurAffinityClient.pickLink("div.pagination a.older"),
-                "previousPage": FurAffinityClient.pickLink("div.pagination a.recent")
+                "nextPage": pickLink("div.pagination a.older"),
+                "previousPage": pickLink("div.pagination a.recent")
             },
             "beta": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
-                "user_name": FurAffinityClient.pickStaticValue(username),
+                "self_link": pickStaticValue(path),
+                "user_name": pickStaticValue(username),
                 "journals": {
                     "listItem": "#columnpage .content section[id*='jid:']",
                     "data": {
@@ -675,22 +399,22 @@ export class FurAffinityClient {
                             "attr": "id",
                             "convert": (s: string) => parseInt(s.split(":")[1])
                         },
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
+                        "self_link": pickLink(SELECTOR_JOURNAL),
                         "title": ".section-header h2",
                         "body_text": ".section-body div.journal-body",
                         "body_html": {
                             "selector": ".section-body div.journal-body",
                             "how": "html"
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan(".section-header span.popup_date"),
+                        "when": pickWhenFromSpan(".section-header span.popup_date"),
                         "comment_count": {
-                            "selector": `${FurAffinityClient.SELECTOR_JOURNAL} > span.font-large`,
-                            "convert": FurAffinityClient.ensureIdIsNumber
+                            "selector": `${SELECTOR_JOURNAL} > span.font-large`,
+                            "convert": ensureIdIsNumber
                         }
                     }
                 },
-                "nextPage": FurAffinityClient.pickFormValue("div.sidebar form:has(>button:contains('Older'))"),
-                "previousPage": FurAffinityClient.pickFormValue("div.sidebar form:has(>button:contains('Newer'))")
+                "nextPage": pickFormValue("div.sidebar form:has(>button:contains('Older'))"),
+                "previousPage": pickFormValue("div.sidebar form:has(>button:contains('Newer'))")
             }
         });
     }
@@ -734,8 +458,8 @@ export class FurAffinityClient {
         const path = `/view/${id}/`;
         return this.fetchAndScrape<Submission>(path, {
             "classic": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "type": {
                     "selector": "#submissionImg",
                     "convert": ((v: any, element: any) => {
@@ -743,7 +467,7 @@ export class FurAffinityClient {
                     }) as any
                 },
                 "title": "#page-submission div.classic-submission-title.information > h2",
-                "thumb_url": FurAffinityClient.pickImage("#submissionImg", "data-preview-src"),
+                "thumb_url": pickImage("#submissionImg", "data-preview-src"),
                 "content_url": {
                     "selector": "#page-submission",
                     "convert": ((v: any, element: any) => {
@@ -764,20 +488,20 @@ export class FurAffinityClient {
                         }
 
                         if (result) {
-                            return FurAffinityClient.fixFaUrl(result);
+                            return fixFaUrl(result);
                         }
                         return undefined;
                     }) as any
                 },
-                "artist_name": `#page-submission div.classic-submission-title.information > ${FurAffinityClient.SELECTOR_USER}`,
-                "artist_url": FurAffinityClient.pickLink(`#page-submission div.classic-submission-title.information > ${FurAffinityClient.SELECTOR_USER}`),
-                "artist_thumb_url": FurAffinityClient.pickImage(`#page-submission div.classic-submissiont-title.avatar ${FurAffinityClient.SELECTOR_USER} > img`),
+                "artist_name": `#page-submission div.classic-submission-title.information > ${SELECTOR_USER}`,
+                "artist_url": pickLink(`#page-submission div.classic-submission-title.information > ${SELECTOR_USER}`),
+                "artist_thumb_url": pickImage(`#page-submission div.classic-submissiont-title.avatar ${SELECTOR_USER} > img`),
                 "body_text": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
                 "body_html": {
                     "selector": "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan("#page-submission td.stats-container span.popup_date"),
+                "when": pickWhenFromSpan("#page-submission td.stats-container span.popup_date"),
                 "keywords": {
                     "listItem": "#page-submission #keywords > a",
                     "data": {
@@ -786,11 +510,11 @@ export class FurAffinityClient {
                     "convert": (c: { value: string }) => c.value,
                 },
                 "nav_items": {
-                    "listItem": `#page-submission div.minigallery-container ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "listItem": `#page-submission div.minigallery-container ${SELECTOR_VIEW}`,
                     "data": {
                         "value": {
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         }
                     },
                     "convert": (c: { value: number }) => c.value
@@ -798,8 +522,8 @@ export class FurAffinityClient {
                 "comments": this.getCommentsObj("#comments-submission", "classic")
             },
             "beta": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "type": {
                     "selector": "#submissionImg",
                     "convert": ((v: any, element: any) => {
@@ -807,7 +531,7 @@ export class FurAffinityClient {
                     }) as any
                 },
                 "title": "#submission_page div.submission-title p",
-                "thumb_url": FurAffinityClient.pickImage("#submissionImg", "data-preview-src"),
+                "thumb_url": pickImage("#submissionImg", "data-preview-src"),
                 "content_url": {
                     "selector": "#submission_page",
                     "convert": ((v: any, element: any) => {
@@ -828,20 +552,20 @@ export class FurAffinityClient {
                         }
 
                         if (result) {
-                            return FurAffinityClient.fixFaUrl(result);
+                            return fixFaUrl(result);
                         }
                         return undefined;
                     }) as any
                 },
-                "artist_name": `#submission_page .submission-id-container ${FurAffinityClient.SELECTOR_USER}`,
-                "artist_url": FurAffinityClient.pickLink(`#submission_page .submission-id-container ${FurAffinityClient.SELECTOR_USER}`),
-                "artist_thumb_url": FurAffinityClient.pickImage(`#submission_page .submission-id-avatar ${FurAffinityClient.SELECTOR_USER} > img`),
+                "artist_name": `#submission_page .submission-id-container ${SELECTOR_USER}`,
+                "artist_url": pickLink(`#submission_page .submission-id-container ${SELECTOR_USER}`),
+                "artist_thumb_url": pickImage(`#submission_page .submission-id-avatar ${SELECTOR_USER} > img`),
                 "body_text": "#submission_page div.submission-description",
                 "body_html": {
                     "selector": "#submission_page div.submission-description",
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan("#submission_page .submission-id-container span.popup_date"),
+                "when": pickWhenFromSpan("#submission_page .submission-id-container span.popup_date"),
                 "keywords": {
                     "listItem": "#submission_page div.submission-sidebar section.tags-row > span.tags > a",
                     "data": {
@@ -850,11 +574,11 @@ export class FurAffinityClient {
                     "convert": (c: { value: string }) => c.value,
                 },
                 "nav_items": {
-                    "listItem": `#submission_page section.minigallery-more div.preview-gallery ${FurAffinityClient.SELECTOR_VIEW}`,
+                    "listItem": `#submission_page section.minigallery-more div.preview-gallery ${SELECTOR_VIEW}`,
                     "data": {
                         "value": {
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         }
                     },
                     "convert": (c: { value: number }) => c.value
@@ -874,146 +598,146 @@ export class FurAffinityClient {
                 "watches": {
                     "listItem": "ul#watches > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "user_name": "div > span",
-                        "user_url": FurAffinityClient.pickLink(),
-                        "user_thumb_url": FurAffinityClient.pickImage(),
-                        "when": FurAffinityClient.pickWhenFromSpan("div > small > span"),
+                        "user_url": pickLink(),
+                        "user_thumb_url": pickImage(),
+                        "when": pickWhenFromSpan("div > small > span"),
                     }
                 },
                 "comments": {
                     "listItem": "ul#comments > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "submission_id": {
-                            "selector": FurAffinityClient.SELECTOR_VIEW,
+                            "selector": SELECTOR_VIEW,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
-                        "submission_title": FurAffinityClient.SELECTOR_VIEW,
-                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span"),
+                        "submission_title": SELECTOR_VIEW,
+                        "submission_url": pickLink(SELECTOR_VIEW),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span"),
                     }
                 },
                 "journal_comments": {
                     "listItem": "fieldset#messages-comments-journal > ul.message-stream > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "title": FurAffinityClient.SELECTOR_JOURNAL,
-                        "url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
+                        "id": pickCheckboxValue(),
+                        "title": SELECTOR_JOURNAL,
+                        "url": pickLink(SELECTOR_JOURNAL),
                         "journal_id": {
-                            "selector": FurAffinityClient.SELECTOR_JOURNAL,
+                            "selector": SELECTOR_JOURNAL,
                             "attr": "href",
-                            "convert": FurAffinityClient.getJournalPath
+                            "convert": getJournalPath
                         },
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span"),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span"),
                     },
                 },
                 "shouts": {
                     "listItem": "fieldset#messages-shouts > ul.message-stream > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span"),
+                        "id": pickCheckboxValue(),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span"),
                     }
                 },
                 "favorites": {
                     "listItem": "ul#favorites > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "submission_id": {
-                            "selector": FurAffinityClient.SELECTOR_VIEW,
+                            "selector": SELECTOR_VIEW,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
-                        "submission_title": FurAffinityClient.SELECTOR_VIEW,
-                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span"),
+                        "submission_title": SELECTOR_VIEW,
+                        "submission_url": pickLink(SELECTOR_VIEW),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span"),
                     }
                 },
                 "journals": {
                     "listItem": "ul#journals > li:not(.section-controls)",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "journal_title": FurAffinityClient.SELECTOR_JOURNAL,
-                        "journal_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span"),
+                        "id": pickCheckboxValue(),
+                        "journal_title": SELECTOR_JOURNAL,
+                        "journal_url": pickLink(SELECTOR_JOURNAL),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span"),
                     }
                 }
             },
             "beta": {
-                "my_username": `.mobile-navigation article.mobile-menu h2 > ${FurAffinityClient.SELECTOR_USER}`,
+                "my_username": `.mobile-navigation article.mobile-menu h2 > ${SELECTOR_USER}`,
                 "watches": {
                     "listItem": "#messages-watches ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "user_name": "div.info > span:nth-child(1)",
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "user_thumb_url": FurAffinityClient.pickImage("img.avatar"),
-                        "when": FurAffinityClient.pickWhenFromSpan("div.info span.popup_date"),
+                        "user_url": pickLink(SELECTOR_USER),
+                        "user_thumb_url": pickImage("img.avatar"),
+                        "when": pickWhenFromSpan("div.info span.popup_date"),
                     }
                 },
                 "comments": {
                     "listItem": "#messages-comments-submission ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "submission_id": {
-                            "selector": FurAffinityClient.SELECTOR_VIEW,
+                            "selector": SELECTOR_VIEW,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
-                        "submission_title": FurAffinityClient.SELECTOR_VIEW,
-                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span.popup_date"),
+                        "submission_title": SELECTOR_VIEW,
+                        "submission_url": pickLink(SELECTOR_VIEW),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span.popup_date"),
                     }
                 },
                 "journal_comments": {
                     "listItem": "#messages-comments-journal ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "title": FurAffinityClient.SELECTOR_JOURNAL,
-                        "url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
+                        "id": pickCheckboxValue(),
+                        "title": SELECTOR_JOURNAL,
+                        "url": pickLink(SELECTOR_JOURNAL),
                         "journal_id": {
-                            "selector": FurAffinityClient.SELECTOR_JOURNAL,
+                            "selector": SELECTOR_JOURNAL,
                             "attr": "href",
-                            "convert": FurAffinityClient.getJournalPath
+                            "convert": getJournalPath
                         },
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span.popup_date"),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span.popup_date"),
                     }
                 },
                 "shouts": {
                     "listItem": "#messages-shouts ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span.popup_date"),
+                        "id": pickCheckboxValue(),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span.popup_date"),
                     }
                 },
                 "favorites": {
                     "listItem": "#messages-favorites ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
+                        "id": pickCheckboxValue(),
                         "submission_id": {
-                            "selector": FurAffinityClient.SELECTOR_VIEW,
+                            "selector": SELECTOR_VIEW,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
                         "submission_title": {
-                            "selector": FurAffinityClient.SELECTOR_VIEW,
+                            "selector": SELECTOR_VIEW,
                             "convert": (str: string) => {
                                 if (str && str.startsWith(`"`) && str.endsWith(`"`)) {
                                     str = str.substr(1, str.length - 2);
@@ -1021,21 +745,21 @@ export class FurAffinityClient {
                                 return str;
                             }
                         },
-                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span.popup_date"),
+                        "submission_url": pickLink(SELECTOR_VIEW),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span.popup_date"),
                     }
                 },
                 "journals": {
                     "listItem": "#messages-journals ul.message-stream > li",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "journal_title": FurAffinityClient.SELECTOR_JOURNAL,
-                        "journal_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_JOURNAL),
-                        "user_name": FurAffinityClient.SELECTOR_USER,
-                        "user_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_USER),
-                        "when": FurAffinityClient.pickWhenFromSpan("span.popup_date"),
+                        "id": pickCheckboxValue(),
+                        "journal_title": SELECTOR_JOURNAL,
+                        "journal_url": pickLink(SELECTOR_JOURNAL),
+                        "user_name": SELECTOR_USER,
+                        "user_url": pickLink(SELECTOR_USER),
+                        "when": pickWhenFromSpan("span.popup_date"),
                     }
                 }
             }
@@ -1046,23 +770,23 @@ export class FurAffinityClient {
         const path = `/journal/${id}/`;
         return this.fetchAndScrape<Journal>(path, {
             "classic": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "title": "#page-journal td.journal-title-box > b > font > div",
-                "user_name": `#page-journal td.journal-title-box ${FurAffinityClient.SELECTOR_USER}`,
-                "user_url": FurAffinityClient.pickLink(`#page-journal td.journal-title-box ${FurAffinityClient.SELECTOR_USER}`),
-                "user_thumb_url": FurAffinityClient.pickImage(`#page-journal td.avatar-box ${FurAffinityClient.SELECTOR_USER} > img`),
+                "user_name": `#page-journal td.journal-title-box ${SELECTOR_USER}`,
+                "user_url": pickLink(`#page-journal td.journal-title-box ${SELECTOR_USER}`),
+                "user_thumb_url": pickImage(`#page-journal td.avatar-box ${SELECTOR_USER} > img`),
                 "body_text": "div.journal-body",
                 "body_html": {
                     "selector": "div.journal-body",
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan("#page-journal td.journal-title-box span.popup_date"),
+                "when": pickWhenFromSpan("#page-journal td.journal-title-box span.popup_date"),
                 "comments": this.getCommentsObj("#page-comments", "classic")
             },
             "beta": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "title": ".content .section-header h2.journal-title",
                 "user_name": {
                     "selector": "userpage-nav-header > userpage-nav-user-details > h1 > username",
@@ -1073,14 +797,14 @@ export class FurAffinityClient {
                         return text;
                     }
                 },
-                "user_url": FurAffinityClient.pickLink(`userpage-nav-header > userpage-nav-avatar > ${FurAffinityClient.SELECTOR_USER}.current`),
-                "user_thumb_url": FurAffinityClient.pickImage(`userpage-nav-header > userpage-nav-avatar > ${FurAffinityClient.SELECTOR_USER}.current > img`),
+                "user_url": pickLink(`userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER}.current`),
+                "user_thumb_url": pickImage(`userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER}.current > img`),
                 "body_text": ".content .journal-item div.journal-content",
                 "body_html": {
                     "selector": ".content .journal-item div.journal-content",
                     "how": "html"
                 },
-                "when": FurAffinityClient.pickWhenFromSpan(".content .section-header span.popup_date"),
+                "when": pickWhenFromSpan(".content .section-header span.popup_date"),
                 "comments": this.getCommentsObj("#comments-journal", "beta")
             }
         });
@@ -1092,17 +816,17 @@ export class FurAffinityClient {
                 "notes": {
                     "listItem": "#notes-list > tbody > tr.note",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "self_link": FurAffinityClient.pickLink("td.subject > a"),
+                        "id": pickCheckboxValue(),
+                        "self_link": pickLink("td.subject > a"),
                         "title": "td.subject > a",
                         "user_name": "td.col-from > a",
-                        "user_url": FurAffinityClient.pickLink("td.col-from > a"),
+                        "user_url": pickLink("td.col-from > a"),
                         "unread": {
                             "selector": "td.subject > a",
                             "attr": "class",
                             "convert": (s: string) => !!(s && s.indexOf("unread") > -1)
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan("td:nth-child(3) > span"),
+                        "when": pickWhenFromSpan("td:nth-child(3) > span"),
                     }
                 }
             },
@@ -1110,17 +834,17 @@ export class FurAffinityClient {
                 "notes": {
                     "listItem": "#notes-list > div.message-center-pms-note-list-view",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "self_link": FurAffinityClient.pickLink("a[href*=\"/msg/pms/\"]"),
+                        "id": pickCheckboxValue(),
+                        "self_link": pickLink("a[href*=\"/msg/pms/\"]"),
                         "title": "div.note-list-subject",
-                        "user_name": `.note-list-sender ${FurAffinityClient.SELECTOR_USER}`,
-                        "user_url": FurAffinityClient.pickLink(`.note-list-sender ${FurAffinityClient.SELECTOR_USER}`),
+                        "user_name": `.note-list-sender ${SELECTOR_USER}`,
+                        "user_url": pickLink(`.note-list-sender ${SELECTOR_USER}`),
                         "unread": {
                             "selector": "div.note-list-subject",
                             "attr": "class",
                             "convert": (s: string) => !!(s && s.indexOf("unread") > -1)
                         },
-                        "when": FurAffinityClient.pickWhenFromSpan(".note-list-senddate span.popup_date"),
+                        "when": pickWhenFromSpan(".note-list-senddate span.popup_date"),
                     }
                 }
             }
@@ -1141,11 +865,11 @@ export class FurAffinityClient {
         const path = `/msg/pms/1/${id}/`;
         return this.fetchAndScrape<Note>(path, {
             "classic": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "title": "#pms-form td.note-view-container td.head em.title",
                 "user_name": "#pms-form td.note-view-container td.head em:nth-child(2) > a",
-                "user_url": FurAffinityClient.pickLink("#pms-form td.note-view-container td.head em:nth-child(2) > a"),
+                "user_url": pickLink("#pms-form td.note-view-container td.head em:nth-child(2) > a"),
                 "body_text": {
                     "selector": "#pms-form td.note-view-container td.text",
                     "convert": pickNoWarningText as any
@@ -1154,14 +878,14 @@ export class FurAffinityClient {
                     "selector": "#pms-form td.note-view-container td.text",
                     "convert": pickNoWarningHtml as any
                 },
-                "when": FurAffinityClient.pickWhenFromSpan("#pms-form td.note-view-container td.date span.popup_date"),
+                "when": pickWhenFromSpan("#pms-form td.note-view-container td.date span.popup_date"),
             },
             "beta": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
+                "self_link": pickStaticValue(path),
                 "title": "#message > .section-header > h2",
-                "user_name": `#message > .section-header .addresses > ${FurAffinityClient.SELECTOR_USER}:nth-child(1) strong`,
-                "user_url": FurAffinityClient.pickLink(`#message > .section-header .avatar > ${FurAffinityClient.SELECTOR_USER}`),
+                "user_name": `#message > .section-header .addresses > ${SELECTOR_USER}:nth-child(1) strong`,
+                "user_url": pickLink(`#message > .section-header .avatar > ${SELECTOR_USER}`),
                 "body_text": {
                     "selector": "#message .section-body div.user-submitted-links",
                     "convert": pickNoWarningText as any
@@ -1170,7 +894,7 @@ export class FurAffinityClient {
                     "selector": "#message .section-body div.user-submitted-links",
                     "convert": pickNoWarningHtml as any
                 },
-                "when": FurAffinityClient.pickWhenFromSpan("#message .addresses span.popup_date"),
+                "when": pickWhenFromSpan("#message .addresses span.popup_date"),
             }
         });
     }
@@ -1217,14 +941,14 @@ export class FurAffinityClient {
                     "listItem": "table.maintable table.submissions>tbody>tr",
                     "data": {
                         "id": {
-                            "selector": `td.info ${FurAffinityClient.SELECTOR_VIEW}`,
+                            "selector": `td.info ${SELECTOR_VIEW}`,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
-                        "submission_title": `dt > ${FurAffinityClient.SELECTOR_VIEW}`,
-                        "submission_url": FurAffinityClient.pickLink(`dt > ${FurAffinityClient.SELECTOR_VIEW}`),
-                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
-                        "when": FurAffinityClient.pickWhenFromSpan("td.info span.popup_date"),
+                        "submission_title": `dt > ${SELECTOR_VIEW}`,
+                        "submission_url": pickLink(`dt > ${SELECTOR_VIEW}`),
+                        "thumb_url": pickImage(SELECTOR_THUMB),
+                        "when": pickWhenFromSpan("td.info span.popup_date"),
                         "views": {
                             "selector": `td.info dd:nth-child(2)`,
                             "convert": pickText as any,
@@ -1252,14 +976,14 @@ export class FurAffinityClient {
                     "listItem": "#standardpage div.stats-page",
                     "data": {
                         "id": {
-                            "selector": `.stats-page-submission-image ${FurAffinityClient.SELECTOR_VIEW}`,
+                            "selector": `.stats-page-submission-image ${SELECTOR_VIEW}`,
                             "attr": "href",
-                            "convert": FurAffinityClient.getViewPath
+                            "convert": getViewPath
                         },
-                        "submission_title": `.stats-page-submission-details > ${FurAffinityClient.SELECTOR_VIEW} > h3`,
-                        "submission_url": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
-                        "when": FurAffinityClient.pickWhenFromSpan(".stats-page-submission-details span.popup_date"),
+                        "submission_title": `.stats-page-submission-details > ${SELECTOR_VIEW} > h3`,
+                        "submission_url": pickLink(SELECTOR_VIEW),
+                        "thumb_url": pickImage(SELECTOR_THUMB),
+                        "when": pickWhenFromSpan(".stats-page-submission-details span.popup_date"),
                         "views": {
                             "selector": `.submission-stats-container > .views > span:nth-child(1)`,
                             "convert": textToInt,
@@ -1288,7 +1012,7 @@ export class FurAffinityClient {
     getCommentText(id: FAID, origin: "submission" | "journal") {
         return this.fetchAndScrape<CommentText>(`/replyto/${origin}/${id}`, {
             "classic": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
                 "body_text": "#pageid-reply-to form[name='myform'] table.maintable > tbody > tr:nth-child(2) > td",
                 "body_html": {
                     "selector": "#pageid-reply-to form[name='myform'] table.maintable > tbody > tr:nth-child(2) > td",
@@ -1296,7 +1020,7 @@ export class FurAffinityClient {
                 }
             },
             "beta": {
-                "id": FurAffinityClient.pickStaticValue(FurAffinityClient.ensureIdIsNumber(id)),
+                "id": pickStaticValue(ensureIdIsNumber(id)),
                 "body_text": "#site-content > form > table > tbody > tr > td > table:nth-child(1) > tbody > tr:nth-child(2) > td",
                 "body_html": {
                     "selector": "#site-content > form > table > tbody > tr > td > table:nth-child(1) > tbody > tr:nth-child(2) > td",
@@ -1318,10 +1042,10 @@ export class FurAffinityClient {
                         "attr": "id",
                         "convert": (s: string) => parseInt(s.split(":")[1])
                     },
-                    "self_link": FurAffinityClient.pickLink("a.comment-link"),
+                    "self_link": pickLink("a.comment-link"),
                     "user_name": "tbody > tr:nth-child(1) > td:nth-child(3) > div > ul > li > b",
-                    "user_url": FurAffinityClient.pickLink("tbody > tr:nth-child(1) > td:nth-child(3) > div > ul > li > ul > li:nth-child(1) > a"),
-                    "user_thumb_url": FurAffinityClient.pickImage("img.avatar"),
+                    "user_url": pickLink("tbody > tr:nth-child(1) > td:nth-child(3) > div > ul > li > ul > li:nth-child(1) > a"),
+                    "user_thumb_url": pickImage("img.avatar"),
                     "body_text": "div.message-text",
                     "body_html": {
                         "selector": "div.message-text",
@@ -1331,7 +1055,7 @@ export class FurAffinityClient {
                         "attr": "data-timestamp",
                         "convert": (s: string) => new Date(parseInt(s) * 1000)
                     },
-                    "when": FurAffinityClient.pickWhenFromSpan("tbody > tr:nth-child(2) > th:nth-child(2) > h4 > span"),
+                    "when": pickWhenFromSpan("tbody > tr:nth-child(2) > th:nth-child(2) > h4 > span"),
                 }
             },
             "beta": {
@@ -1342,10 +1066,10 @@ export class FurAffinityClient {
                         "attr": "id",
                         "convert": (s: string) => parseInt(s.split(":")[1])
                     },
-                    "self_link": FurAffinityClient.pickLink("a.comment-link"),
+                    "self_link": pickLink("a.comment-link"),
                     "user_name": `comment-username .comment_username`,
-                    "user_url": FurAffinityClient.pickLink(`.avatar > ${FurAffinityClient.SELECTOR_USER}`),
-                    "user_thumb_url": FurAffinityClient.pickImage(`.avatar > ${FurAffinityClient.SELECTOR_USER} > img.comment_useravatar`),
+                    "user_url": pickLink(`.avatar > ${SELECTOR_USER}`),
+                    "user_thumb_url": pickImage(`.avatar > ${SELECTOR_USER} > img.comment_useravatar`),
                     "body_text": "comment-user-text > div",
                     "body_html": {
                         "selector": "comment-user-text > div",
@@ -1355,7 +1079,7 @@ export class FurAffinityClient {
                         "attr": "data-timestamp",
                         "convert": (s: string) => new Date(parseInt(s) * 1000)
                     },
-                    "when": FurAffinityClient.pickWhenFromSpan("comment-date > span.popup_date"),
+                    "when": pickWhenFromSpan("comment-date > span.popup_date"),
                 }
             }
         };
@@ -1385,12 +1109,12 @@ export class FurAffinityClient {
                 "submissions": {
                     "listItem": "#gallery-search-results figure.t-image",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "title": `figcaption ${FurAffinityClient.SELECTOR_VIEW}`,
-                        "artist_name": `figcaption ${FurAffinityClient.SELECTOR_USER}`,
-                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
-                        "when": FurAffinityClient.pickDateFromThumbnail(FurAffinityClient.SELECTOR_THUMB)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "title": `figcaption ${SELECTOR_VIEW}`,
+                        "artist_name": `figcaption ${SELECTOR_USER}`,
+                        "thumb_url": pickImage(SELECTOR_THUMB),
+                        "when": pickDateFromThumbnail(SELECTOR_THUMB)
                     }
                 },
                 "more": {
@@ -1402,12 +1126,12 @@ export class FurAffinityClient {
                 "submissions": {
                     "listItem": "#gallery-search-results figure.t-image",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "title": `figcaption ${FurAffinityClient.SELECTOR_VIEW}`,
-                        "artist_name": `figcaption ${FurAffinityClient.SELECTOR_USER}`,
-                        "thumb_url": FurAffinityClient.pickImage(FurAffinityClient.SELECTOR_THUMB),
-                        "when": FurAffinityClient.pickDateFromThumbnail(FurAffinityClient.SELECTOR_THUMB),
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "title": `figcaption ${SELECTOR_VIEW}`,
+                        "artist_name": `figcaption ${SELECTOR_USER}`,
+                        "thumb_url": pickImage(SELECTOR_THUMB),
+                        "when": pickDateFromThumbnail(SELECTOR_THUMB),
                     }
                 },
                 "more": {
@@ -1483,16 +1207,16 @@ export class FurAffinityClient {
     protected scrapeSubmissionsPage(path: string) {
         return this.fetchAndScrape<SubmissionPage>(path, {
             "classic": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "submissions": {
                     "listItem": "figure.t-image",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "self_link": FurAffinityClient.pickLink("b > u > a"),
+                        "id": pickCheckboxValue(),
+                        "self_link": pickLink("b > u > a"),
                         "title": "figcaption > label > p:nth-child(2) > a",
                         "artist_name": "figcaption > label > p:nth-child(3) > a",
-                        "thumb_url": FurAffinityClient.pickImage("b > u > a > img"),
-                        "when": FurAffinityClient.pickDateFromThumbnail("b > u > a > img")
+                        "thumb_url": pickImage("b > u > a > img"),
+                        "when": pickDateFromThumbnail("b > u > a > img")
                     }
                 },
                 "nextPage": {
@@ -1505,16 +1229,16 @@ export class FurAffinityClient {
                 }
             },
             "beta": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "submissions": {
                     "listItem": "#messagecenter-submissions figure.t-image",
                     "data": {
-                        "id": FurAffinityClient.pickCheckboxValue(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "title": `figcaption label p ${FurAffinityClient.SELECTOR_VIEW}`,
-                        "artist_name": `figcaption label p ${FurAffinityClient.SELECTOR_USER}`,
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} > img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} > img`),
+                        "id": pickCheckboxValue(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "title": `figcaption label p ${SELECTOR_VIEW}`,
+                        "artist_name": `figcaption label p ${SELECTOR_USER}`,
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} > img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
                     }
                 },
                 "nextPage": {
@@ -1547,41 +1271,41 @@ export class FurAffinityClient {
     protected scrapeUserGalleryPage(path: string, pageType: "gallery" | "scraps" | "favorites") {
         return this.fetchAndScrape<SubmissionPage>(path, {
             "classic": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "submissions": {
                     "listItem": "section.gallery figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink("b > u > a"),
-                        "title": FurAffinityClient.pick("figcaption > p:nth-child(1) > a", "title"),
-                        "artist_name": FurAffinityClient.pick("figcaption > p:nth-child(2) > a", "title"),
-                        "thumb_url": FurAffinityClient.pickImage("b > u > a > img"),
-                        "when": FurAffinityClient.pickDateFromThumbnail("b > u > a > img")
+                        "id": pickFigureId(),
+                        "self_link": pickLink("b > u > a"),
+                        "title": pick("figcaption > p:nth-child(1) > a", "title"),
+                        "artist_name": pick("figcaption > p:nth-child(2) > a", "title"),
+                        "thumb_url": pickImage("b > u > a > img"),
+                        "when": pickDateFromThumbnail("b > u > a > img")
                     }
                 },
-                "nextPage": FurAffinityClient.pickLink("a.button-link.right"),
-                "previousPage": FurAffinityClient.pickLink("a.button-link.left"),
+                "nextPage": pickLink("a.button-link.right"),
+                "previousPage": pickLink("a.button-link.left"),
             },
             "beta": {
-                "self_link": FurAffinityClient.pickStaticValue(path),
+                "self_link": pickStaticValue(path),
                 "submissions": {
                     "listItem": "section.gallery figure[id*='sid-']",
                     "data": {
-                        "id": FurAffinityClient.pickFigureId(),
-                        "self_link": FurAffinityClient.pickLink(FurAffinityClient.SELECTOR_VIEW),
-                        "title": `figcaption p:nth-child(1) ${FurAffinityClient.SELECTOR_VIEW}`,
-                        "artist_name": `figcaption p:nth-child(2) ${FurAffinityClient.SELECTOR_USER}`,
-                        "thumb_url": FurAffinityClient.pickImage(`${FurAffinityClient.SELECTOR_VIEW} > img`),
-                        "when": FurAffinityClient.pickDateFromThumbnail(`${FurAffinityClient.SELECTOR_VIEW} > img`)
+                        "id": pickFigureId(),
+                        "self_link": pickLink(SELECTOR_VIEW),
+                        "title": `figcaption p:nth-child(1) ${SELECTOR_VIEW}`,
+                        "artist_name": `figcaption p:nth-child(2) ${SELECTOR_USER}`,
+                        "thumb_url": pickImage(`${SELECTOR_VIEW} > img`),
+                        "when": pickDateFromThumbnail(`${SELECTOR_VIEW} > img`)
                     }
                 },
-                "nextPage": pageType === "gallery" ? FurAffinityClient.pickFormValue("form:has(>button:contains('Next'))") : FurAffinityClient.pickLink(".pagination a.button.right"),
-                "previousPage": pageType === "gallery" ? FurAffinityClient.pickFormValue("form:has(>button:contains('Prev'))") : FurAffinityClient.pickLink(".pagination a.button.left"),
+                "nextPage": pageType === "gallery" ? pickFormValue("form:has(>button:contains('Next'))") : pickLink(".pagination a.button.right"),
+                "previousPage": pageType === "gallery" ? pickFormValue("form:has(>button:contains('Prev'))") : pickLink(".pagination a.button.left"),
             }
         });
     }
 
-    protected determineSiteVersion(doc: cheerio.Root): string {
+    private determineSiteVersion(doc: cheerio.Root): string {
         const scraped = scrape.scrapeHTML<{ path: string }>(doc, {
             "path": {
                 "selector": "body",
@@ -1597,13 +1321,13 @@ export class FurAffinityClient {
     }
 
     private async fetch(path: string, config?: FetchConfig, attempt = 1): Promise<string> {
-        const url = `${FurAffinityClient.SITE_ROOT}${path}`;
+        const url = `${SITE_ROOT}${path}`;
         const res = await this.httpClient.fetch(url, {
             ...config,
             "cookies": this.cookies,
         });
 
-        const status = FurAffinityClient.checkErrors(res);
+        const status = checkErrors(res);
         if (status !== 200) {
             if (this.throwErrors && (this.disableRetry || attempt > 6)) {
                 throw new FurAffinityError("Got error from FurAffinity", status, url);
@@ -1613,7 +1337,7 @@ export class FurAffinityClient {
 
             // For server errors, attempt retry w/ exponential backoff
             if (!this.disableRetry && status >= 500 && attempt <= 6) { // 2^6=64 so 60sec
-                await FurAffinityClient.delay(Math.pow(2, attempt) * 1000);
+                await delay(Math.pow(2, attempt) * 1000);
                 return await this.fetch(url, config, attempt + 1);
             }
 
