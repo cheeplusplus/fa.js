@@ -92,7 +92,7 @@ interface UserPage {
     "header_html": string;
     "statistics_text": string;
     "statistics_html": string;
-    "featured_submission": {
+    "featured_submission"?: {
         "id": number;
         "self_link": string;
         "title": string;
@@ -113,7 +113,7 @@ interface UserPage {
         "thumb_url": string;
         "when": Date;
     }[];
-    "top_journal": {
+    "top_journal"?: {
         "id": number;
         "self_link": string;
         "title": string;
@@ -122,7 +122,7 @@ interface UserPage {
         "when": Date;
         "comment_count": number;
     };
-    "profile_id": {
+    "profile_id"?: {
         "id": number;
         "self_link": string;
         "thumb_url": string;

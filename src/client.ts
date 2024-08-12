@@ -121,12 +121,14 @@ export class FurAffinityClient {
                         "service": pickWithRegex(colonPreMatchRegex, ".contact-service-name > strong"),
                         "link": pickLink(),
                         "value": {
-                            "convert": (val: string, elem: any) => {
-                                if (elem.children()[1]) {
+                            "convert": (val: string, elem: cheerio.Cheerio) => {
+                                const children = elem.children();
+
+                                if (children[1]) {
                                     return elem.children().eq(1).text();
                                 }
 
-                                return elem.children()[0].next.data.trim();
+                                return elem.children()[0]?.next?.data?.trim();
                             }
                         }
                     }
@@ -197,18 +199,20 @@ export class FurAffinityClient {
                     "data": {
                         "title": "strong",
                         "value": {
-                            "convert": (val: string, elem: any) => {
-                                if (elem.children()[2]) {
+                            "convert": (val: string, elem: cheerio.Cheerio) => {
+                                const children = elem.children();
+
+                                if (children[2]) {
                                     // URL
-                                    return elem.children().eq(2).text();
+                                    return children.eq(2).text();
                                 }
 
-                                if (elem.children()[1]) {
+                                if (children[1]) {
                                     // Text
-                                    return elem.children()[1].next.data.trim();
+                                    return children[1].next?.data?.trim();
                                 }
 
-                                return elem.children()[0].next.data.trim();
+                                return children[0]?.next?.data?.trim();
                             }
                         }
                     }
@@ -219,18 +223,20 @@ export class FurAffinityClient {
                         "service": "strong",
                         "link": pickLink(),
                         "value": {
-                            "convert": (val: string, elem: any) => {
-                                if (elem.children()[2]) {
+                            "convert": (val: string, elem: cheerio.Cheerio) => {
+                                const children = elem.children();
+
+                                if (children[2]) {
                                     // URL
-                                    return elem.children().eq(2).text();
+                                    return children.eq(2).text();
                                 }
 
-                                if (elem.children()[1]) {
+                                if (children[1]) {
                                     // Text
-                                    return elem.children()[1].next.data.trim();
+                                    return children[1].next?.data?.trim();
                                 }
 
-                                return elem.children()[0].next.data.trim();
+                                return children[0]?.next?.data?.trim();
                             }
                         }
                     }
@@ -346,9 +352,9 @@ export class FurAffinityClient {
 
         return {
             ...base,
-            "featured_submission": featuredSubmission,
-            "top_journal": topJournal,
-            "profile_id": profileId
+            "featured_submission": featuredSubmission?.id ? topJournal : undefined,
+            "top_journal": topJournal?.id ? topJournal : undefined,
+            "profile_id": profileId?.id ? profileId : undefined,
         } as UserPage;
     }
 
@@ -494,10 +500,12 @@ export class FurAffinityClient {
     }
 
     async getSubmission(id: FAID) {
-        function getSubmissionType(element: any) {
+        function getSubmissionType(element: cheerio.Cheerio) {
             if (element.attr("src")) {
                 const src = element.attr("src");
-                if (src.includes("/stories/") || src.includes("poetry")) {
+                if (!src) {
+                    return "unknown";
+                } else if (src.includes("/stories/") || src.includes("poetry")) {
                     return "story";
                 } else if (src.includes("/music/")) {
                     return "music";
@@ -521,7 +529,7 @@ export class FurAffinityClient {
                 "self_link": pickStaticValue(path),
                 "type": {
                     "selector": "#submissionImg",
-                    "convert": ((v: any, element: any) => {
+                    "convert": ((v: string, element: cheerio.Cheerio) => {
                         return getSubmissionType(element);
                     }) as any
                 },
@@ -529,7 +537,7 @@ export class FurAffinityClient {
                 "thumb_url": pickImage("#submissionImg", "data-preview-src"),
                 "content_url": {
                     "selector": "#page-submission",
-                    "convert": ((v: any, element: any) => {
+                    "convert": ((v: string, element: cheerio.Cheerio) => {
                         let result: string | undefined;
                         const typeFinderRoot = element.find("#submissionImg");
                         const type = getSubmissionType(typeFinderRoot);
@@ -585,7 +593,7 @@ export class FurAffinityClient {
                 "self_link": pickStaticValue(path),
                 "type": {
                     "selector": "#submissionImg",
-                    "convert": ((v: any, element: any) => {
+                    "convert": ((v: string, element: cheerio.Cheerio) => {
                         return getSubmissionType(element);
                     }) as any
                 },
@@ -593,7 +601,7 @@ export class FurAffinityClient {
                 "thumb_url": pickImage("#submissionImg", "data-preview-src"),
                 "content_url": {
                     "selector": "#submission_page",
-                    "convert": ((v: any, element: any) => {
+                    "convert": ((v: string, element: cheerio.Cheerio) => {
                         let result: string | undefined;
                         const typeFinderRoot = element.find("#submissionImg");
                         const type = getSubmissionType(typeFinderRoot);
@@ -997,7 +1005,7 @@ export class FurAffinityClient {
             const pluckedVal = elem.contents().filter((i, e) => e.type === "text").text().trim();
             return parseInt(pluckedVal || "0", 10);
         };
-        const textToInt = (val: any) => {
+        const textToInt = (val: string) => {
             return parseInt(val.trim() || "0", 10);
         };
 
