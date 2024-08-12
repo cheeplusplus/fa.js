@@ -193,6 +193,17 @@ interface Messages {
     }[];
 }
 
+interface Watchlist {
+    "self_link": string;
+    "user_name": string;
+    "users": {
+        "user_name": string;
+        "user_url": string;
+    }[];
+    "nextPage"?: string;
+    "previousPage"?: string;
+}
+
 interface Journal {
     "id": number;
     "self_link": string;

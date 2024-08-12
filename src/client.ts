@@ -431,6 +431,68 @@ export class FurAffinityClient {
         }
     }
 
+    public getUserIsWatching(username: string) {
+        return this.scrapeUserWatchPages(username, `/watchlist/by/${username}/`);
+    }
+
+    public getUserIsWatchingPage(username: string, page: string | number) {
+        return this.scrapeUserWatchPage(username, `/watchlist/by/${username}/${page}/`);
+    }
+
+    public getUserIsWatchedBy(username: string) {
+        return this.scrapeUserWatchPages(username, `/watchlist/to/${username}/`);
+    }
+
+    public getUserIsWatchedByPage(username: string, page: string | number) {
+        return this.scrapeUserWatchPage(username, `/watchlist/to/${username}/${page}/`);
+    }
+
+    protected scrapeUserWatchPage(username: string, url: string) {
+        return this.fetchAndScrape<Watchlist>(url, {
+            classic: {
+                self_link: pickStaticValue(url),
+                user_name: pickStaticValue(username),
+                users: {
+                    listItem: `#userpage-budlist > tbody > tr > td`,
+                    data: {
+                        user_name: SELECTOR_USER,
+                        user_url: pickLink(SELECTOR_USER),
+                    }
+                },
+                nextPage: pickFormValue("form:has(>button:contains('Next'))"),
+                previousPage: pickFormValue("form:has(>button:contains('Last'))"),
+            },
+            beta: {
+                self_link: pickStaticValue(url),
+                user_name: pickStaticValue(username),
+                users: {
+                    listItem: "div.watch-list .watch-row",
+                    data: {
+                        user_name: SELECTOR_USER,
+                        user_url: pickLink(SELECTOR_USER),
+                    }
+                },
+                nextPage: pickFormValue("div.section-footer form:has(>button:contains('Next'))"),
+                previousPage: pickFormValue("div.section-footer form:has(>button:contains('Back'))"),
+            }
+        })
+    }
+
+    protected async * scrapeUserWatchPages(username: string, url: string): AsyncGenerator<Watchlist["users"], unknown, unknown> {
+        while (true) {
+            const page = await this.scrapeUserWatchPage(username, url);
+
+            if (page.nextPage && page.nextPage !== url) {
+                yield page.users;
+                url = page.nextPage;
+            } else if (page.users.length > 0) {
+                return yield page.users;
+            } else {
+                return;
+            }
+        }
+    }
+
     async getSubmission(id: FAID) {
         function getSubmissionType(element: any) {
             if (element.attr("src")) {
