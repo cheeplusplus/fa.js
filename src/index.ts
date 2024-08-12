@@ -1,4 +1,4 @@
 export { FurAffinityClient } from "./client";
 export * from "./httpclients";
 export * from "./errors";
-export type * from "./types";
+export * from "./types";
