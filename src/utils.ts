@@ -43,46 +43,6 @@ function readDateWhenField(field: string): Date | null {
     return null;
 }
 
-export function checkErrors(res: StandardHttpResponse): number {
-    if (res.statusCode !== 200) {
-        return res.statusCode;
-    }
-
-    if (res.body.indexOf("You are allowed to views the statistics of your own account alone.") > -1) {
-        return 401;
-    }
-
-    if (res.body.indexOf("This user has voluntarily disabled access to their userpage.") > -1) {
-        return 403;
-    }
-
-    if (res.body.indexOf("The submission you are trying to find is not in our database.") > -1) {
-        return 404;
-    }
-
-    if (res.body.indexOf("The journal you are trying to find is not in our database.") > -1) {
-        return 404;
-    }
-
-    if (res.body.indexOf("This user cannot be found.") > -1) {
-        return 404;
-    }
-
-    if (res.body.indexOf("was not found in our database") > -1) {
-        return 404;
-    }
-
-    if (res.body.indexOf("For more information please check the") > -1) {
-        return 500;
-    }
-
-    if (res.body.indexOf("The server is currently having difficulty responding to all requests.") > -1) {
-        return 503;
-    }
-
-    return 200;
-}
-
 export function delay(ms: number) {
     return new Promise((r) => {
         setTimeout(r, ms);

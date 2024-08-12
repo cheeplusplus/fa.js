@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio";
 import scrape from "scrape-it";
-import { FurAffinityError } from "./errors";
+import { checkErrors, FurAffinityError } from "./errors";
 import { FetchHttpClient } from "./httpclients";
-import { checkErrors, colonPostMatchRegex, colonPreMatchRegex, delay, ensureIdIsNumber, fixFaUrl, getJournalPath, getViewPath, parensMatchRegex, parensNumberMatchRegex, pick, pickCheckboxValue, pickDateFromThumbnail, pickFigureId, pickFormValue, pickImage, pickLink, pickStaticValue, pickWhenFromSpan, pickWithRegex, SELECTOR_JOURNAL, SELECTOR_THUMB, SELECTOR_USER, SELECTOR_VIEW, SITE_ROOT } from "./utils";
+import { colonPostMatchRegex, colonPreMatchRegex, delay, ensureIdIsNumber, fixFaUrl, getJournalPath, getViewPath, parensMatchRegex, parensNumberMatchRegex, pick, pickCheckboxValue, pickDateFromThumbnail, pickFigureId, pickFormValue, pickImage, pickLink, pickStaticValue, pickWhenFromSpan, pickWithRegex, SELECTOR_JOURNAL, SELECTOR_THUMB, SELECTOR_USER, SELECTOR_VIEW, SITE_ROOT } from "./utils";
 
 // TODO: Rate limiting and backoff error handling
 // TODO: Handle removed submissions/journals/etc
@@ -11,18 +11,15 @@ export class FurAffinityClient {
     public static LAST_SEEN_SITE_VERSION: string;
 
     private cookies?: string;
-    private throwErrors?: boolean;
     private disableRetry?: boolean;
     private httpClient: HttpClient;
 
     constructor(config?: string | ClientConfig) {
         if (typeof config === "string") {
             this.cookies = config;
-            this.throwErrors = false;
             this.disableRetry = false;
         } else if (typeof config === "object") {
             this.cookies = config.cookies ?? undefined;
-            this.throwErrors = config.throwErrors ?? false;
             this.disableRetry = config.disableRetry ?? false;
             if (config.httpClient) {
                 this.httpClient = config.httpClient;
@@ -851,7 +848,7 @@ export class FurAffinityClient {
         });
     }
 
-    getNote(id: FAID) {
+    async getNote(id: FAID) {
         const pickNoWarningText = (val: string, elem: cheerio.Cheerio) => {
             elem.children("div.noteWarningMessage").remove();
             return elem.text()?.trim();
@@ -862,11 +859,11 @@ export class FurAffinityClient {
         };
 
         // TODO: Remove note warning text
-        const path = `/msg/pms/1/${id}/`;
-        return this.fetchAndScrape<Note>(path, {
+        const path = `/msg/pms/1/${id}/`; // we get better HTML here but harder to tell if invalid output
+        const note = await this.fetchAndScrape<Note>(path, {
             "classic": {
                 "id": pickStaticValue(ensureIdIsNumber(id)),
-                "self_link": pickStaticValue(path),
+                "self_link": pickStaticValue(`/viewmessage/${id}/`),
                 "title": "#pms-form td.note-view-container td.head em.title",
                 "user_name": "#pms-form td.note-view-container td.head em:nth-child(2) > a",
                 "user_url": pickLink("#pms-form td.note-view-container td.head em:nth-child(2) > a"),
@@ -897,6 +894,13 @@ export class FurAffinityClient {
                 "when": pickWhenFromSpan("#message .addresses span.popup_date"),
             }
         });
+
+        // Special-case missing notes - not ideal
+        if (!note.title && !note.user_name && !note.user_url && !note.body_text && !note.body_html) {
+            throw new FurAffinityError("Note not found.", 404, SITE_ROOT + path, "");
+        }
+
+        return note;
     }
 
     async moveNote(ids: FAID | FAID[], moveTo: NoteMoveAction) {
@@ -1329,20 +1333,19 @@ export class FurAffinityClient {
 
         const status = checkErrors(res);
         if (status !== 200) {
-            if (this.throwErrors && (this.disableRetry || attempt > 6)) {
-                throw new FurAffinityError("Got error from FurAffinity", status, url);
-            } else {
-                console.warn(`FA error: Got HTTP error ${status} at ${url}`);
-            }
-
             // For server errors, attempt retry w/ exponential backoff
             if (!this.disableRetry && status >= 500 && attempt <= 6) { // 2^6=64 so 60sec
                 await delay(Math.pow(2, attempt) * 1000);
                 return await this.fetch(url, config, attempt + 1);
             }
 
-            // TODO: Handle throwing errors differently
-            return "";
+            let body = res.body;
+            try {
+                body = cheerio.load(body)("body").text();
+            } catch (err) {
+                // nop
+            }
+            throw new FurAffinityError("Got error from FurAffinity", status, url, body);
         }
 
         return res.body;
