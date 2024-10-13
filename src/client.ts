@@ -753,7 +753,7 @@ export class FurAffinityClient {
               result = typeFinderRoot.attr("data-fullview-src");
             } else if (type === "story") {
               const slink = element.find(
-                "#submission-content a[href*='/stories/']"
+                ".submission-content a[href*='/stories/']"
               );
               result = slink.attr("href");
             } else if (type === "music") {
