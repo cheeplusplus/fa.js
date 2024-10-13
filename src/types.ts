@@ -38,7 +38,6 @@ export interface Comment extends CommentText {
   user_name: string;
   user_url: string;
   user_thumb_url: string;
-  timestamp: number;
   when: Date;
 }
 

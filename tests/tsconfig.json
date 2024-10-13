@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2018",
+        "lib": ["ES2018"],
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "declaration": true,
+        "inlineSourceMap": false,
+        "sourceMap": true,
+        "outDir": "build",
+        "baseUrl": "."
+    },
+    "include": [
+        "./**/*.spec.ts",
+        "../src/**/*"
+    ]
+}

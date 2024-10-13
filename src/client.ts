@@ -58,7 +58,7 @@ import type {
 // TODO: Handle removed submissions/journals/etc
 
 export class FurAffinityClient {
-  public static LAST_SEEN_SITE_VERSION: string;
+  public static LAST_SEEN_SITE_VERSION: "classic" | "beta";
 
   private cookies?: string;
   private disableRetry?: boolean;
@@ -1325,13 +1325,10 @@ export class FurAffinityClient {
             selector: "div.message-text",
             how: "html",
           },
-          timestamp: {
+          when: {
             attr: "data-timestamp",
             convert: (s: string) => new Date(parseInt(s) * 1000),
           },
-          when: pickWhenFromSpan(
-            "tbody > tr:nth-child(2) > th:nth-child(2) > h4 > span"
-          ),
         },
       },
       beta: {
@@ -1353,11 +1350,10 @@ export class FurAffinityClient {
             selector: "comment-user-text > div",
             how: "html",
           },
-          timestamp: {
+          when: {
             attr: "data-timestamp",
             convert: (s: string) => new Date(parseInt(s) * 1000),
           },
-          when: pickWhenFromSpan("comment-date > span.popup_date"),
         },
       },
     };
@@ -1606,7 +1602,7 @@ export class FurAffinityClient {
     });
   }
 
-  private determineSiteVersion(doc: cheerio.Root): string {
+  private determineSiteVersion(doc: cheerio.Root): "classic" | "beta" {
     const scraped = scrape.scrapeHTML<{ path: string }>(doc, {
       path: {
         selector: "body",
