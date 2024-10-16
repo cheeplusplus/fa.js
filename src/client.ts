@@ -772,7 +772,7 @@ export class FurAffinityClient {
             return undefined;
           }) as any,
         },
-        artist_name: `#submission_page .submission-id-container ${SELECTOR_USER}`,
+        artist_name: `#submission_page .submission-id-sub-container ${SELECTOR_USER} > strong`,
         artist_url: pickLink(
           `#submission_page .submission-id-container ${SELECTOR_USER}`
         ),
