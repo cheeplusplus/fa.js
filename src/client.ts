@@ -1600,14 +1600,8 @@ export class FurAffinityClient {
             when: pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
           },
         },
-        nextPage:
-          pageType === "gallery"
-            ? pickFormValue("form:has(>button:contains('Next'))")
-            : pickLink(".pagination a.button.right"),
-        previousPage:
-          pageType === "gallery"
-            ? pickFormValue("form:has(>button:contains('Prev'))")
-            : pickLink(".pagination a.button.left"),
+        nextPage: pickFormValue("form:has(>button:contains('Next'))"),
+        previousPage: pickFormValue("form:has(>button:contains('Prev'))"),
       },
     });
   }
