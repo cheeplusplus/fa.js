@@ -1,8 +1,14 @@
-import { format } from "date-fns";
+import { format, formatISO } from "date-fns";
 import { tz, TZDate } from "@date-fns/tz";
 import { ACCT_TZ, themedIt } from "./shared";
 
 const getDateFromLocal = (dt: string) => new TZDate(dt, ACCT_TZ);
+function dateReplacer(this: any, key: string, value: any) {
+  if (this[key] instanceof Date) {
+    return this[key].toISOString();
+  }
+  return value;
+}
 
 describe("submission", () => {
   // TODO: Figure out exactly when this changes
@@ -39,51 +45,56 @@ describe("submission", () => {
     expect(actual.keywords).toEqual(["wolf", "plushie", "integration_test"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(4);
-    expect(JSON.stringify(actual.comments)).toEqual(
+    expect(JSON.stringify(actual.comments, dateReplacer)).toEqual(
       // >:( jest why
-      JSON.stringify([
-        {
-          id: 182261884,
-          self_link: "#cid:182261884",
-          user_name: "kauko-fadotjs-test-a",
-          user_url: "/user/kauko-fadotjs-test-a/",
-          user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
-          body_text: "Hello this is a comment!",
-          body_html: "Hello this is a comment!",
-          when: getDateFromLocal("2024-10-26T22:40:40"),
-        },
-        {
-          id: 182261887,
-          self_link: "#cid:182261887",
-          user_name: "AndrewNeo",
-          user_url: "/user/andrewneo/",
-          user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
-          body_text: "This is a reply to your comment",
-          body_html: "This is a reply to your comment",
-          when: getDateFromLocal("2024-10-26T22:40:52"),
-        },
-        {
-          id: 182261888,
-          self_link: "#cid:182261888",
-          user_name: "AndrewNeo",
-          user_url: "/user/andrewneo/",
-          user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
-          body_text: "This is a second top level comment with some bbcode",
-          body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
-          when: getDateFromLocal("2024-10-26T22:41:08"),
-        },
-        {
-          // This is a hidden comment, which the library should probably detect as such
-          id: 182261894,
-          self_link: "",
-          user_name: "",
-          user_url: "",
-          user_thumb_url: "",
-          body_text: "",
-          body_html: null,
-          when: null,
-        },
-      ])
+      JSON.stringify(
+        [
+          {
+            id: 182261884,
+            self_link: "#cid:182261884",
+            user_name: "kauko-fadotjs-test-a",
+            user_url: "/user/kauko-fadotjs-test-a/",
+            user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
+            body_text: "Hello this is a comment!",
+            body_html: "Hello this is a comment!",
+            when: getDateFromLocal("2024-10-26T22:40:40"),
+          },
+          {
+            id: 182261887,
+            self_link: "#cid:182261887",
+            user_name: "AndrewNeo",
+            user_url: "/user/andrewneo/",
+            user_thumb_url:
+              "https://a.furaffinity.net/1563504911/andrewneo.gif",
+            body_text: "This is a reply to your comment",
+            body_html: "This is a reply to your comment",
+            when: getDateFromLocal("2024-10-26T22:40:52"),
+          },
+          {
+            id: 182261888,
+            self_link: "#cid:182261888",
+            user_name: "AndrewNeo",
+            user_url: "/user/andrewneo/",
+            user_thumb_url:
+              "https://a.furaffinity.net/1563504911/andrewneo.gif",
+            body_text: "This is a second top level comment with some bbcode",
+            body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
+            when: getDateFromLocal("2024-10-26T22:41:08"),
+          },
+          {
+            // This is a hidden comment, which the library should probably detect as such
+            id: 182261894,
+            self_link: "",
+            user_name: "",
+            user_url: "",
+            user_thumb_url: "",
+            body_text: "",
+            body_html: null,
+            when: null,
+          },
+        ],
+        dateReplacer
+      )
     );
   });
 

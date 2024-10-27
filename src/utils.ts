@@ -180,7 +180,10 @@ export function pickFromTimestampData(
     attr,
     convert: (s: string) => {
       const dt = datefns.fromUnixTime(parseInt(s));
-      return timezone ? new TZDate(dt, timezone) : dt;
+      if (!Number.isNaN(dt) && datefns.isValid(dt)) {
+        return timezone ? new TZDate(dt, timezone) : dt;
+      }
+      return null;
     },
   };
 }
