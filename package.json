@@ -16,7 +16,6 @@
         "test": "jest --setupFiles dotenv/config"
     },
     "devDependencies": {
-        "@date-fns/utc": "^2.1.0",
         "@types/jest": "^29.5.13",
         "@types/node": ">=18.0.0",
         "dotenv": "^16.4.5",

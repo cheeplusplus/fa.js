@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import { UTCDate } from "@date-fns/utc";
 import { themedIt } from "./shared";
 
 describe("submission", () => {
@@ -30,7 +29,7 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a submission for integration testing <a class=\"auto_link named_url\" href=\"https://github.com/cheeplusplus/fa.js\">fa.js</a><br> <br> This account and art belongs to <a href=\"/user/andrewneo\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif\" align=\"middle\" title=\"andrewneo\" alt=\"andrewneo\">&nbsp;andrewneo</a>, the artist of the work is <a href=\"/user/tinderhoof\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif\" align=\"middle\" title=\"tinderhoof\" alt=\"tinderhoof\">&nbsp;tinderhoof</a>. <a class=\"auto_link named_url\" href=\"https://www.furaffinity.net/view/23617101/\">Original upload is here</a>`
     );
-    expect(actual.when).toEqual(new UTCDate("2024-10-27T05:36:00.000Z"));
+    expect(actual.when).toEqual(new Date("2024-10-26T22:36:00"));
     expect(actual.keywords).toEqual(["wolf", "plushie", "integration_test"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(4);
@@ -45,7 +44,7 @@ describe("submission", () => {
           user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
           body_text: "Hello this is a comment!",
           body_html: "Hello this is a comment!",
-          when: new UTCDate("2024-10-27T05:40:40.000Z"),
+          when: new Date("2024-10-26T22:40:40"),
         },
         {
           id: 182261887,
@@ -55,7 +54,7 @@ describe("submission", () => {
           user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
           body_text: "This is a reply to your comment",
           body_html: "This is a reply to your comment",
-          when: new UTCDate("2024-10-27T05:40:52.000Z"),
+          when: new Date("2024-10-26T22:40:52"),
         },
         {
           id: 182261888,
@@ -65,7 +64,7 @@ describe("submission", () => {
           user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
           body_text: "This is a second top level comment with some bbcode",
           body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
-          when: new UTCDate("2024-10-27T05:41:08.000Z"),
+          when: new Date("2024-10-26T22:41:08"),
         },
         {
           // This is a hidden comment, which the library should probably detect as such
@@ -107,7 +106,7 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a "story" for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was computer generated and no copyright is claimed.`
     );
-    expect(actual.when).toEqual(new UTCDate("2024-10-27T05:45:00.000Z"));
+    expect(actual.when).toEqual(new Date("2024-10-26T22:45:00"));
     expect(actual.keywords).toEqual(["integration_test", "scifi"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(0);
@@ -138,7 +137,7 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is audio for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`
     );
-    expect(actual.when).toEqual(new UTCDate("2024-10-27T05:54:00.000Z"));
+    expect(actual.when).toEqual(new Date("2024-10-26T22:54:00"));
     expect(actual.keywords).toEqual([
       "integration_test",
       "music",
