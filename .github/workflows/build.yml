@@ -1,0 +1,26 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 10 * * *'
+
+jobs:
+  next:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+      - name: Install packages
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+        env:
+          FA_CLASSIC_COOKIES: ${{ secrets.FA_CLASSIC_COOKIES }}
+          FA_BETA_COOKIES: ${{ secrets.FA_BETA_COOKIES }}
