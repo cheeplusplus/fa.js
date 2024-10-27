@@ -1,6 +1,6 @@
 import type * as cheerio from "cheerio";
 import * as datefns from "date-fns";
-import { tz, TZDate, tzOffset } from "@date-fns/tz";
+import { tz } from "@date-fns/tz";
 import type { AnyNode, Text } from "domhandler";
 import type { FAID } from "./types";
 
@@ -26,7 +26,10 @@ export const SELECTOR_VIEW = 'a[href*="/view/"]';
 export const SELECTOR_JOURNAL = 'a[href*="/journal/"]';
 export const SELECTOR_THUMB = 'img[src*="//t.furaffinity.net/"]';
 
-function readDateWhenField(field: string, timezone?: string): Date | null {
+export function readDateWhenField(
+  field: string,
+  timezone?: string
+): Date | null {
   if (!field) {
     return null;
   }
@@ -179,9 +182,12 @@ export function pickFromTimestampData(
   return {
     attr,
     convert: (s: string) => {
-      const dt = datefns.fromUnixTime(parseInt(s));
+      const dt = datefns.fromUnixTime(
+        parseInt(s),
+        timezone ? { in: tz(timezone) } : undefined
+      );
       if (!Number.isNaN(dt) && datefns.isValid(dt)) {
-        return timezone ? new TZDate(dt, timezone) : dt;
+        return dt;
       }
       return null;
     },

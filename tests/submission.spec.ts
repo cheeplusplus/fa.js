@@ -1,15 +1,10 @@
-import { format } from "date-fns";
+import { format, formatISO } from "date-fns";
 import { tz, TZDate } from "@date-fns/tz";
 import { ACCT_TZ, themedIt } from "./shared";
 
-const getDateFromLocal = (dt: string) => new TZDate(dt, ACCT_TZ);
-const getDateFromLocalStr = (dt: string) => getDateFromLocal(dt).toISOString();
-function dateReplacer(this: any, key: string, value: any) {
-  if (this[key] instanceof Date) {
-    return this[key].toISOString();
-  }
-  return value;
-}
+import "./matchers";
+
+const getDateFromEpoch = (dt: number) => new TZDate(dt, ACCT_TZ);
 
 describe("submission", () => {
   // TODO: Figure out exactly when this changes
@@ -42,62 +37,59 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a submission for integration testing <a class=\"auto_link named_url\" href=\"https://github.com/cheeplusplus/fa.js\">fa.js</a><br> <br> This account and art belongs to <a href=\"/user/andrewneo\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif\" align=\"middle\" title=\"andrewneo\" alt=\"andrewneo\">&nbsp;andrewneo</a>, the artist of the work is <a href=\"/user/tinderhoof\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif\" align=\"middle\" title=\"tinderhoof\" alt=\"tinderhoof\">&nbsp;tinderhoof</a>. <a class=\"auto_link named_url\" href=\"https://www.furaffinity.net/view/23617101/\">Original upload is here</a>`
     );
-    expect(actual.when.toISOString()).toEqual(
-      getDateFromLocalStr("2024-10-26T22:36:00")
-    );
+    // 2024-10-26T22:36:00
+    expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007360000));
     expect(actual.keywords).toEqual(["wolf", "plushie", "integration_test"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(4);
-    expect(JSON.stringify(actual.comments, dateReplacer)).toEqual(
+    expect(JSON.stringify(actual.comments)).toEqual(
       // >:( jest why
-      JSON.stringify(
-        [
-          {
-            id: 182261884,
-            self_link: "#cid:182261884",
-            user_name: "kauko-fadotjs-test-a",
-            user_url: "/user/kauko-fadotjs-test-a/",
-            user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
-            body_text: "Hello this is a comment!",
-            body_html: "Hello this is a comment!",
-            when: getDateFromLocal("2024-10-26T22:40:40"),
-          },
-          {
-            id: 182261887,
-            self_link: "#cid:182261887",
-            user_name: "AndrewNeo",
-            user_url: "/user/andrewneo/",
-            user_thumb_url:
-              "https://a.furaffinity.net/1563504911/andrewneo.gif",
-            body_text: "This is a reply to your comment",
-            body_html: "This is a reply to your comment",
-            when: getDateFromLocal("2024-10-26T22:40:52"),
-          },
-          {
-            id: 182261888,
-            self_link: "#cid:182261888",
-            user_name: "AndrewNeo",
-            user_url: "/user/andrewneo/",
-            user_thumb_url:
-              "https://a.furaffinity.net/1563504911/andrewneo.gif",
-            body_text: "This is a second top level comment with some bbcode",
-            body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
-            when: getDateFromLocal("2024-10-26T22:41:08"),
-          },
-          {
-            // This is a hidden comment, which the library should probably detect as such
-            id: 182261894,
-            self_link: "",
-            user_name: "",
-            user_url: "",
-            user_thumb_url: "",
-            body_text: "",
-            body_html: null,
-            when: null,
-          },
-        ],
-        dateReplacer
-      )
+      JSON.stringify([
+        {
+          id: 182261884,
+          self_link: "#cid:182261884",
+          user_name: "kauko-fadotjs-test-a",
+          user_url: "/user/kauko-fadotjs-test-a/",
+          user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
+          body_text: "Hello this is a comment!",
+          body_html: "Hello this is a comment!",
+          // 2024-10-26T22:40:40
+          when: getDateFromEpoch(1730007640000),
+        },
+        {
+          id: 182261887,
+          self_link: "#cid:182261887",
+          user_name: "AndrewNeo",
+          user_url: "/user/andrewneo/",
+          user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
+          body_text: "This is a reply to your comment",
+          body_html: "This is a reply to your comment",
+          // 2024-10-26T22:40:52
+          when: getDateFromEpoch(1730007652000),
+        },
+        {
+          id: 182261888,
+          self_link: "#cid:182261888",
+          user_name: "AndrewNeo",
+          user_url: "/user/andrewneo/",
+          user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
+          body_text: "This is a second top level comment with some bbcode",
+          body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
+          // 2024-10-26T22:41:08
+          when: getDateFromEpoch(1730007668000),
+        },
+        {
+          // This is a hidden comment, which the library should probably detect as such
+          id: 182261894,
+          self_link: "",
+          user_name: "",
+          user_url: "",
+          user_thumb_url: "",
+          body_text: "",
+          body_html: null,
+          when: null,
+        },
+      ])
     );
   });
 
@@ -126,9 +118,8 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a "story" for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was computer generated and no copyright is claimed.`
     );
-    expect(actual.when.toISOString()).toEqual(
-      getDateFromLocalStr("2024-10-26T22:45:00")
-    );
+    // 2024-10-26T22:45:00
+    expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007900000));
     expect(actual.keywords).toEqual(["integration_test", "scifi"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(0);
@@ -159,9 +150,8 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is audio for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`
     );
-    expect(actual.when.toISOString()).toEqual(
-      getDateFromLocalStr("2024-10-26T22:54:00")
-    );
+    // 2024-10-26T22:54:00
+    expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730008440000));
     expect(actual.keywords).toEqual([
       "integration_test",
       "music",
