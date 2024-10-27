@@ -37,6 +37,7 @@ function readDateWhenField(field: string): Date | null {
 
   // Try all known date formats
   for (const format of dateFormats) {
+    // WARNING: We do not know the timezone we're reading at any given point
     const parsedDate = datefns.parse(field, format, new Date());
     if (datefns.isValid(parsedDate)) {
       return parsedDate;
@@ -159,6 +160,13 @@ export function pickWhenFromSpan(selector: string) {
 
       return null;
     },
+  };
+}
+
+export function pickFromTimestampData(attr: string = "data-timestamp") {
+  return {
+    attr,
+    convert: (s: string) => datefns.fromUnixTime(parseInt(s)),
   };
 }
 

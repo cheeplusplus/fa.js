@@ -18,6 +18,7 @@ import {
   pickDateFromThumbnail,
   pickFigureId,
   pickFormValue,
+  pickFromTimestampData,
   pickImage,
   pickLink,
   pickStaticValue,
@@ -1327,10 +1328,7 @@ export class FurAffinityClient {
             selector: "div.message-text",
             how: "html",
           },
-          when: {
-            attr: "data-timestamp",
-            convert: (s: string) => new Date(parseInt(s) * 1000),
-          },
+          when: pickFromTimestampData(),
         },
       },
       beta: {
@@ -1352,10 +1350,7 @@ export class FurAffinityClient {
             selector: "comment-user-text > div",
             how: "html",
           },
-          when: {
-            attr: "data-timestamp",
-            convert: (s: string) => new Date(parseInt(s) * 1000),
-          },
+          when: pickFromTimestampData(),
         },
       },
     };
