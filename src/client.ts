@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
 import scrape from "scrape-it";
 import { checkErrors, FurAffinityError } from "./errors";
 import { FetchHttpClient } from "./httpclients";
@@ -22,6 +23,7 @@ import {
   pickStaticValue,
   pickWhenFromSpan,
   pickWithRegex,
+  readElementSkipContent,
   SELECTOR_JOURNAL,
   SELECTOR_THUMB,
   SELECTOR_USER,
@@ -189,14 +191,14 @@ export class FurAffinityClient {
             ),
             link: pickLink(),
             value: {
-              convert: (val: string, elem: cheerio.Cheerio) => {
+              convert: (val: string, elem: cheerio.Cheerio<AnyNode>) => {
                 const children = elem.children();
 
                 if (children[1]) {
                   return elem.children().eq(1).text();
                 }
 
-                return elem.children()[0]?.next?.data?.trim();
+                return readElementSkipContent(elem.children()[0]);
               },
             },
           },
@@ -274,7 +276,7 @@ export class FurAffinityClient {
           data: {
             title: "strong",
             value: {
-              convert: (val: string, elem: cheerio.Cheerio) => {
+              convert: (val: string, elem: cheerio.Cheerio<AnyNode>) => {
                 const children = elem.children();
 
                 if (children[2]) {
@@ -284,10 +286,10 @@ export class FurAffinityClient {
 
                 if (children[1]) {
                   // Text
-                  return children[1].next?.data?.trim();
+                  return readElementSkipContent(children[1]);
                 }
 
-                return children[0]?.next?.data?.trim();
+                return readElementSkipContent(children[0]);
               },
             },
           },
@@ -299,7 +301,7 @@ export class FurAffinityClient {
             service: "strong",
             link: pickLink(),
             value: {
-              convert: (val: string, elem: cheerio.Cheerio) => {
+              convert: (val: string, elem: cheerio.Cheerio<AnyNode>) => {
                 const children = elem.children();
 
                 if (children[2]) {
@@ -309,10 +311,10 @@ export class FurAffinityClient {
 
                 if (children[1]) {
                   // Text
-                  return children[1].next?.data?.trim();
+                  return readElementSkipContent(children[1]);
                 }
 
-                return children[0]?.next?.data?.trim();
+                return readElementSkipContent(children[0]);
               },
             },
           },
@@ -632,7 +634,7 @@ export class FurAffinityClient {
   }
 
   async getSubmission(id: FAID) {
-    function getSubmissionType(element: cheerio.Cheerio) {
+    function getSubmissionType(element: cheerio.Cheerio<AnyNode>) {
       if (element.attr("src")) {
         const src = element.attr("src");
         if (!src) {
@@ -661,7 +663,7 @@ export class FurAffinityClient {
         self_link: pickStaticValue(path),
         type: {
           selector: "#submissionImg",
-          convert: ((v: string, element: cheerio.Cheerio) => {
+          convert: ((v: string, element: cheerio.Cheerio<AnyNode>) => {
             return getSubmissionType(element);
           }) as any,
         },
@@ -669,7 +671,7 @@ export class FurAffinityClient {
         thumb_url: pickImage("#submissionImg", "data-preview-src"),
         content_url: {
           selector: "#page-submission",
-          convert: ((v: string, element: cheerio.Cheerio) => {
+          convert: ((v: string, element: cheerio.Cheerio<AnyNode>) => {
             let result: string | undefined;
             const typeFinderRoot = element.find("#submissionImg");
             const type = getSubmissionType(typeFinderRoot);
@@ -737,7 +739,7 @@ export class FurAffinityClient {
         self_link: pickStaticValue(path),
         type: {
           selector: "#submissionImg",
-          convert: ((v: string, element: cheerio.Cheerio) => {
+          convert: ((v: string, element: cheerio.Cheerio<AnyNode>) => {
             return getSubmissionType(element);
           }) as any,
         },
@@ -745,7 +747,7 @@ export class FurAffinityClient {
         thumb_url: pickImage("#submissionImg", "data-preview-src"),
         content_url: {
           selector: "#submission_page",
-          convert: ((v: string, element: cheerio.Cheerio) => {
+          convert: ((v: string, element: cheerio.Cheerio<AnyNode>) => {
             let result: string | undefined;
             const typeFinderRoot = element.find("#submissionImg");
             const type = getSubmissionType(typeFinderRoot);
@@ -1087,11 +1089,11 @@ export class FurAffinityClient {
   }
 
   async getNote(id: FAID) {
-    const pickNoWarningText = (val: string, elem: cheerio.Cheerio) => {
+    const pickNoWarningText = (val: string, elem: cheerio.Cheerio<AnyNode>) => {
       elem.children("div.noteWarningMessage").remove();
       return elem.text()?.trim();
     };
-    const pickNoWarningHtml = (val: string, elem: cheerio.Cheerio) => {
+    const pickNoWarningHtml = (val: string, elem: cheerio.Cheerio<AnyNode>) => {
       elem.children("div.noteWarningMessage").remove();
       return elem.html()?.trim();
     };
@@ -1182,7 +1184,7 @@ export class FurAffinityClient {
   }
 
   getSubmissionStatsPage(username: string, page: number = 1) {
-    const pickText = (val: string, elem: cheerio.Cheerio) => {
+    const pickText = (val: string, elem: cheerio.Cheerio<AnyNode>) => {
       const pluckedVal = elem
         .contents()
         .filter((i, e) => e.type === "text")
@@ -1602,7 +1604,7 @@ export class FurAffinityClient {
     });
   }
 
-  private determineSiteVersion(doc: cheerio.Root): "classic" | "beta" {
+  private determineSiteVersion(doc: cheerio.CheerioAPI): "classic" | "beta" {
     const scraped = scrape.scrapeHTML<{ path: string }>(doc, {
       path: {
         selector: "body",

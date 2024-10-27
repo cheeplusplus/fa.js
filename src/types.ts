@@ -1,3 +1,6 @@
+import type * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
+
 // Type definitions
 
 export interface ClientConfig {
@@ -336,7 +339,7 @@ export interface TypedScrapeOptionList<T> {
   listItem: string;
   data?: TypedScrapeOptions<T>;
   convert?: (value: any) => any;
-  how?: string | ((element: cheerio.Selector) => any);
+  how?: string | ((element: cheerio.Cheerio<AnyNode>) => any);
 }
 
 // tslint:disable-next-line: array-type

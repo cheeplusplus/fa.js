@@ -16,7 +16,6 @@
         "test": "jest --setupFiles dotenv/config"
     },
     "devDependencies": {
-        "@types/cheerio": "^0.22.33",
         "@types/jest": "^29.5.13",
         "@types/node": ">=18.0.0",
         "dotenv": "^16.4.5",
@@ -26,7 +25,6 @@
         "typescript": "^5.6.3"
     },
     "dependencies": {
-        "cheerio": "^1.0.0",
         "date-fns": "^4.1.0",
         "scrape-it": "^6.1.3"
     }

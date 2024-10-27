@@ -1,4 +1,6 @@
+import type * as cheerio from "cheerio";
 import * as datefns from "date-fns";
+import type { AnyNode, Text } from "domhandler";
 import type { FAID } from "./types";
 
 const viewRegex = /\/view\/(\d+)/;
@@ -137,11 +139,9 @@ export function pickDateFromThumbnail(
 export function pickWhenFromSpan(selector: string) {
   return {
     selector,
-    how: (source: cheerio.Selector) => {
-      // scrape-it has bad typings
-      const ss = source as unknown as cheerio.Cheerio;
-      const text = ss.text();
-      const title = ss.attr("title");
+    how: (source: cheerio.Cheerio<AnyNode>) => {
+      const text = source.text();
+      const title = source.attr("title");
 
       if (text) {
         const textVal = readDateWhenField(text);
@@ -151,12 +151,7 @@ export function pickWhenFromSpan(selector: string) {
       }
 
       if (title) {
-        const attrVal = ss.attr("title");
-        if (!attrVal) {
-          return null;
-        }
-
-        const titleVal = readDateWhenField(attrVal);
+        const titleVal = readDateWhenField(title);
         if (titleVal) {
           return titleVal;
         }
@@ -206,4 +201,9 @@ export function ensureIdIsNumber(id: FAID): number {
   }
 
   return parseInt(id, 10);
+}
+
+/** Skip over the first sub element of a node to get the text after it */
+export function readElementSkipContent(node: AnyNode): string | null {
+  return (node?.next as Text)?.data?.trim();
 }
