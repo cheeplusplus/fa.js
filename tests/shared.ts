@@ -1,5 +1,7 @@
 import { FurAffinityClient } from "../src/client";
 
+export const ACCT_TZ = "US/Pacific";
+
 function getClient(targetTheme: "classic" | "beta") {
   const cookies =
     targetTheme == "beta"
@@ -12,7 +14,7 @@ function getClient(targetTheme: "classic" | "beta") {
     throw new Error("Missing cookies environment variables!");
   }
 
-  return new FurAffinityClient({ cookies });
+  return new FurAffinityClient({ cookies, timezone: ACCT_TZ });
 }
 
 export function themedIt(

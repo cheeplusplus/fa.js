@@ -1,5 +1,6 @@
 import type * as cheerio from "cheerio";
 import * as datefns from "date-fns";
+import { tz, TZDate, tzOffset } from "@date-fns/tz";
 import type { AnyNode, Text } from "domhandler";
 import type { FAID } from "./types";
 
@@ -25,7 +26,7 @@ export const SELECTOR_VIEW = 'a[href*="/view/"]';
 export const SELECTOR_JOURNAL = 'a[href*="/journal/"]';
 export const SELECTOR_THUMB = 'img[src*="//t.furaffinity.net/"]';
 
-function readDateWhenField(field: string): Date | null {
+function readDateWhenField(field: string, timezone?: string): Date | null {
   if (!field) {
     return null;
   }
@@ -37,9 +38,17 @@ function readDateWhenField(field: string): Date | null {
 
   // Try all known date formats
   for (const format of dateFormats) {
-    // WARNING: We do not know the timezone we're reading at any given point
-    const parsedDate = datefns.parse(field, format, new Date());
-    if (datefns.isValid(parsedDate)) {
+    const parsedDate = datefns.parse(
+      field,
+      format,
+      new Date(),
+      timezone
+        ? {
+            in: tz(timezone),
+          }
+        : undefined
+    );
+    if (!Number.isNaN(parsedDate) && datefns.isValid(parsedDate)) {
       return parsedDate;
     }
   }
@@ -137,7 +146,7 @@ export function pickDateFromThumbnail(
   };
 }
 
-export function pickWhenFromSpan(selector: string) {
+export function pickWhenFromSpan(selector: string, timezone?: string) {
   return {
     selector,
     how: (source: cheerio.Cheerio<AnyNode>) => {
@@ -145,14 +154,14 @@ export function pickWhenFromSpan(selector: string) {
       const title = source.attr("title");
 
       if (text) {
-        const textVal = readDateWhenField(text);
+        const textVal = readDateWhenField(text, timezone);
         if (textVal) {
           return textVal;
         }
       }
 
       if (title) {
-        const titleVal = readDateWhenField(title);
+        const titleVal = readDateWhenField(title, timezone);
         if (titleVal) {
           return titleVal;
         }
@@ -163,10 +172,16 @@ export function pickWhenFromSpan(selector: string) {
   };
 }
 
-export function pickFromTimestampData(attr: string = "data-timestamp") {
+export function pickFromTimestampData(
+  attr: string = "data-timestamp",
+  timezone?: string
+) {
   return {
     attr,
-    convert: (s: string) => datefns.fromUnixTime(parseInt(s)),
+    convert: (s: string) => {
+      const dt = datefns.fromUnixTime(parseInt(s));
+      return timezone ? new TZDate(dt, timezone) : dt;
+    },
   };
 }
 

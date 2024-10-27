@@ -5,6 +5,7 @@ import type { AnyNode } from "domhandler";
 
 export interface ClientConfig {
   cookies?: string;
+  timezone?: string;
   throwErrors?: boolean;
   disableRetry?: boolean;
   httpClient?: HttpClient;

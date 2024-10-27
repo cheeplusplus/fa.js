@@ -64,6 +64,7 @@ export class FurAffinityClient {
   public static LAST_SEEN_SITE_VERSION: "classic" | "beta";
 
   private cookies?: string;
+  private timezone?: string;
   private disableRetry?: boolean;
   private httpClient: HttpClient;
 
@@ -73,6 +74,7 @@ export class FurAffinityClient {
       this.disableRetry = false;
     } else if (typeof config === "object") {
       this.cookies = config.cookies ?? undefined;
+      this.timezone = config.timezone ?? undefined;
       this.disableRetry = config.disableRetry ?? false;
       if (config.httpClient) {
         this.httpClient = config.httpClient;
@@ -221,7 +223,7 @@ export class FurAffinityClient {
               selector: "div.no_overflow",
               how: "html",
             },
-            when: pickWhenFromSpan("td > span.popup_date"),
+            when: this.pickWhenFromSpan("td > span.popup_date"),
           },
         },
       },
@@ -340,7 +342,7 @@ export class FurAffinityClient {
               selector: "comment-user-text.comment_text",
               how: "html",
             },
-            when: pickWhenFromSpan("comment-date > span.popup_date"),
+            when: this.pickWhenFromSpan("comment-date > span.popup_date"),
           },
         },
       },
@@ -393,7 +395,9 @@ export class FurAffinityClient {
           selector: `${topJournalCellClassic} .journal-body`,
           how: "html",
         },
-        when: pickWhenFromSpan(`${topJournalCellClassic} td > span.popup_date`),
+        when: this.pickWhenFromSpan(
+          `${topJournalCellClassic} td > span.popup_date`
+        ),
         comment_count: pickWithRegex(
           parensMatchRegex,
           `${topJournalCellClassic} ${SELECTOR_JOURNAL}:contains("Comments")`,
@@ -415,7 +419,7 @@ export class FurAffinityClient {
           selector: `${topJournalCellBeta} .section-body > div.user-submitted-links`,
           how: "html",
         },
-        when: pickWhenFromSpan(
+        when: this.pickWhenFromSpan(
           `${topJournalCellBeta} .section-body span.popup_date`
         ),
         comment_count: pickWithRegex(
@@ -494,7 +498,7 @@ export class FurAffinityClient {
               selector: "tbody > tr > td > div.no_overflow.alt1",
               how: "html",
             },
-            when: pickWhenFromSpan("td > span.popup_date"),
+            when: this.pickWhenFromSpan("td > span.popup_date"),
             comment_count: pickWithRegex(
               parensMatchRegex,
               `${SELECTOR_JOURNAL}:contains("Comments")`,
@@ -524,7 +528,7 @@ export class FurAffinityClient {
               selector: ".section-body div.journal-body",
               how: "html",
             },
-            when: pickWhenFromSpan(".section-header span.popup_date"),
+            when: this.pickWhenFromSpan(".section-header span.popup_date"),
             comment_count: {
               selector: `${SELECTOR_JOURNAL} > span.font-large`,
               convert: ensureIdIsNumber,
@@ -713,7 +717,7 @@ export class FurAffinityClient {
             "#page-submission > table > tbody > tr:nth-child(1) > td > table > tbody > tr:nth-child(2) > td > table > tbody > tr:nth-child(2) > td",
           how: "html",
         },
-        when: pickWhenFromSpan(
+        when: this.pickWhenFromSpan(
           "#page-submission td.stats-container span.popup_date"
         ),
         keywords: {
@@ -787,7 +791,7 @@ export class FurAffinityClient {
           selector: "#submission_page div.submission-description",
           how: "html",
         },
-        when: pickWhenFromSpan(
+        when: this.pickWhenFromSpan(
           "#submission_page .submission-id-container span.popup_date"
         ),
         keywords: {
@@ -827,7 +831,7 @@ export class FurAffinityClient {
             user_name: "div > span",
             user_url: pickLink(),
             user_thumb_url: pickImage(),
-            when: pickWhenFromSpan("div > small > span"),
+            when: this.pickWhenFromSpan("div > small > span"),
           },
         },
         comments: {
@@ -843,7 +847,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: this.pickWhenFromSpan("span"),
           },
         },
         journal_comments: {
@@ -860,7 +864,7 @@ export class FurAffinityClient {
             },
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: this.pickWhenFromSpan("span"),
           },
         },
         shouts: {
@@ -870,7 +874,7 @@ export class FurAffinityClient {
             id: pickCheckboxValue(),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: this.pickWhenFromSpan("span"),
           },
         },
         favorites: {
@@ -886,7 +890,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: this.pickWhenFromSpan("span"),
           },
         },
         journals: {
@@ -897,7 +901,7 @@ export class FurAffinityClient {
             journal_url: pickLink(SELECTOR_JOURNAL),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: this.pickWhenFromSpan("span"),
           },
         },
       },
@@ -910,7 +914,7 @@ export class FurAffinityClient {
             user_name: "div.info > span:nth-child(1)",
             user_url: pickLink(SELECTOR_USER),
             user_thumb_url: pickImage("img.avatar"),
-            when: pickWhenFromSpan("div.info span.popup_date"),
+            when: this.pickWhenFromSpan("div.info span.popup_date"),
           },
         },
         comments: {
@@ -926,7 +930,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span.popup_date"),
+            when: this.pickWhenFromSpan("span.popup_date"),
           },
         },
         journal_comments: {
@@ -942,7 +946,7 @@ export class FurAffinityClient {
             },
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span.popup_date"),
+            when: this.pickWhenFromSpan("span.popup_date"),
           },
         },
         shouts: {
@@ -951,7 +955,7 @@ export class FurAffinityClient {
             id: pickCheckboxValue(),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span.popup_date"),
+            when: this.pickWhenFromSpan("span.popup_date"),
           },
         },
         favorites: {
@@ -975,7 +979,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span.popup_date"),
+            when: this.pickWhenFromSpan("span.popup_date"),
           },
         },
         journals: {
@@ -986,7 +990,7 @@ export class FurAffinityClient {
             journal_url: pickLink(SELECTOR_JOURNAL),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span.popup_date"),
+            when: this.pickWhenFromSpan("span.popup_date"),
           },
         },
       },
@@ -1012,7 +1016,7 @@ export class FurAffinityClient {
           selector: "div.journal-body",
           how: "html",
         },
-        when: pickWhenFromSpan(
+        when: this.pickWhenFromSpan(
           "#page-journal td.journal-title-box span.popup_date"
         ),
         comments: this.getCommentsObj("#page-comments", "classic"),
@@ -1042,7 +1046,7 @@ export class FurAffinityClient {
           selector: ".content .journal-item div.journal-content",
           how: "html",
         },
-        when: pickWhenFromSpan(".content .section-header span.popup_date"),
+        when: this.pickWhenFromSpan(".content .section-header span.popup_date"),
         comments: this.getCommentsObj("#comments-journal", "beta"),
       },
     });
@@ -1064,7 +1068,7 @@ export class FurAffinityClient {
               attr: "class",
               convert: (s: string) => !!(s && s.indexOf("unread") > -1),
             },
-            when: pickWhenFromSpan("td:nth-child(3) > span"),
+            when: this.pickWhenFromSpan("td:nth-child(3) > span"),
           },
         },
       },
@@ -1082,7 +1086,7 @@ export class FurAffinityClient {
               attr: "class",
               convert: (s: string) => !!(s && s.indexOf("unread") > -1),
             },
-            when: pickWhenFromSpan(".note-list-senddate span.popup_date"),
+            when: this.pickWhenFromSpan(".note-list-senddate span.popup_date"),
           },
         },
       },
@@ -1119,7 +1123,7 @@ export class FurAffinityClient {
           selector: "#pms-form td.note-view-container td.text",
           convert: pickNoWarningHtml as any,
         },
-        when: pickWhenFromSpan(
+        when: this.pickWhenFromSpan(
           "#pms-form td.note-view-container td.date span.popup_date"
         ),
       },
@@ -1139,7 +1143,7 @@ export class FurAffinityClient {
           selector: "#message .section-body div.user-submitted-links",
           convert: pickNoWarningHtml as any,
         },
-        when: pickWhenFromSpan("#message .addresses span.popup_date"),
+        when: this.pickWhenFromSpan("#message .addresses span.popup_date"),
       },
     });
 
@@ -1212,7 +1216,7 @@ export class FurAffinityClient {
               submission_title: `dt > ${SELECTOR_VIEW}`,
               submission_url: pickLink(`dt > ${SELECTOR_VIEW}`),
               thumb_url: pickImage(SELECTOR_THUMB),
-              when: pickWhenFromSpan("td.info span.popup_date"),
+              when: this.pickWhenFromSpan("td.info span.popup_date"),
               views: {
                 selector: `td.info dd:nth-child(2)`,
                 convert: pickText as any,
@@ -1247,7 +1251,7 @@ export class FurAffinityClient {
               submission_title: `.stats-page-submission-details > ${SELECTOR_VIEW} > h3`,
               submission_url: pickLink(SELECTOR_VIEW),
               thumb_url: pickImage(SELECTOR_THUMB),
-              when: pickWhenFromSpan(
+              when: this.pickWhenFromSpan(
                 ".stats-page-submission-details span.popup_date"
               ),
               views: {
@@ -1328,7 +1332,7 @@ export class FurAffinityClient {
             selector: "div.message-text",
             how: "html",
           },
-          when: pickFromTimestampData(),
+          when: this.pickFromTimestampData(),
         },
       },
       beta: {
@@ -1350,7 +1354,7 @@ export class FurAffinityClient {
             selector: "comment-user-text > div",
             how: "html",
           },
-          when: pickFromTimestampData(),
+          when: this.pickFromTimestampData(),
         },
       },
     };
@@ -1612,6 +1616,13 @@ export class FurAffinityClient {
     }
 
     return "classic";
+  }
+
+  private pickWhenFromSpan(selector: string) {
+    return pickWhenFromSpan(selector, this.timezone);
+  }
+  private pickFromTimestampData(attr?: string) {
+    return pickFromTimestampData(attr, this.timezone);
   }
 
   private async fetch(
