@@ -1,6 +1,9 @@
+import { format } from "date-fns";
 import { themedIt } from "./shared";
 
 describe("submission", () => {
+  const liveThumbDateStr = format(new Date(), "yyyyMMdd"); // TODO: Figure out exactly when this changes
+
   themedIt("type 'image' is correctly parsed", async (client, theme) => {
     const actual = await client.getSubmission(58614470);
     expect(actual.id).toEqual(58614470);
@@ -16,7 +19,7 @@ describe("submission", () => {
     expect(actual.artist_name).toEqual("kauko-fadotjs-test-a");
     expect(actual.artist_url).toEqual("/user/kauko-fadotjs-test-a/");
     expect(actual.artist_thumb_url).toEqual(
-      "https://a.furaffinity.net/20241026/kauko-fadotjs-test-a.gif"
+      "https://a.furaffinity.net/20241027/kauko-fadotjs-test-a.gif"
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
@@ -24,7 +27,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a submission for integration testing <a class=\"auto_link named_url\" href=\"https://github.com/cheeplusplus/fa.js\">fa.js</a><br> <br> This account and art belongs to <a href=\"/user/andrewneo\" class=\"iconusername\"><img src=\"//a.furaffinity.net/20241026/andrewneo.gif\" align=\"middle\" title=\"andrewneo\" alt=\"andrewneo\">&nbsp;andrewneo</a>, the artist of the work is <a href=\"/user/tinderhoof\" class=\"iconusername\"><img src=\"//a.furaffinity.net/20241026/tinderhoof.gif\" align=\"middle\" title=\"tinderhoof\" alt=\"tinderhoof\">&nbsp;tinderhoof</a>. <a class=\"auto_link named_url\" href=\"https://www.furaffinity.net/view/23617101/\">Original upload is here</a>`
+      `This is a submission for integration testing <a class=\"auto_link named_url\" href=\"https://github.com/cheeplusplus/fa.js\">fa.js</a><br> <br> This account and art belongs to <a href=\"/user/andrewneo\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif\" align=\"middle\" title=\"andrewneo\" alt=\"andrewneo\">&nbsp;andrewneo</a>, the artist of the work is <a href=\"/user/tinderhoof\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif\" align=\"middle\" title=\"tinderhoof\" alt=\"tinderhoof\">&nbsp;tinderhoof</a>. <a class=\"auto_link named_url\" href=\"https://www.furaffinity.net/view/23617101/\">Original upload is here</a>`
     );
     expect(actual.when).toEqual(new Date("2024-10-27T05:36:00.000Z")); // UTC
     expect(actual.keywords).toEqual(["wolf", "plushie", "integration_test"]);
@@ -38,8 +41,7 @@ describe("submission", () => {
           self_link: "#cid:182261884",
           user_name: "kauko-fadotjs-test-a",
           user_url: "/user/kauko-fadotjs-test-a/",
-          user_thumb_url:
-            "https://a.furaffinity.net/20241026/kauko-fadotjs-test-a.gif",
+          user_thumb_url: `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`,
           body_text: "Hello this is a comment!",
           body_html: "Hello this is a comment!",
           when: new Date("2024-10-27T05:40:40.000Z"),
@@ -94,7 +96,7 @@ describe("submission", () => {
     expect(actual.artist_name).toEqual("kauko-fadotjs-test-a");
     expect(actual.artist_url).toEqual("/user/kauko-fadotjs-test-a/");
     expect(actual.artist_thumb_url).toEqual(
-      "https://a.furaffinity.net/20241026/kauko-fadotjs-test-a.gif"
+      `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
@@ -102,7 +104,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a "story" for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/20241026/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was computer generated and no copyright is claimed.`
+      `This is a "story" for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was computer generated and no copyright is claimed.`
     );
     expect(actual.when).toEqual(new Date("2024-10-27T05:45:00.000Z")); // UTC
     expect(actual.keywords).toEqual(["integration_test", "scifi"]);
@@ -125,7 +127,7 @@ describe("submission", () => {
     expect(actual.artist_name).toEqual("kauko-fadotjs-test-a");
     expect(actual.artist_url).toEqual("/user/kauko-fadotjs-test-a/");
     expect(actual.artist_thumb_url).toEqual(
-      "https://a.furaffinity.net/20241026/kauko-fadotjs-test-a.gif"
+      `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
@@ -133,7 +135,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is audio for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/20241026/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`
+      `This is audio for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`
     );
     expect(actual.when).toEqual(new Date("2024-10-27T05:54:00.000Z")); // UTC
     expect(actual.keywords).toEqual([
