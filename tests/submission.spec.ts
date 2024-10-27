@@ -1,8 +1,9 @@
-import { format, formatISO } from "date-fns";
+import { format } from "date-fns";
 import { tz, TZDate } from "@date-fns/tz";
 import { ACCT_TZ, themedIt } from "./shared";
 
 const getDateFromLocal = (dt: string) => new TZDate(dt, ACCT_TZ);
+const getDateFromLocalStr = (dt: string) => getDateFromLocal(dt).toISOString();
 function dateReplacer(this: any, key: string, value: any) {
   if (this[key] instanceof Date) {
     return this[key].toISOString();
@@ -41,7 +42,9 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a submission for integration testing <a class=\"auto_link named_url\" href=\"https://github.com/cheeplusplus/fa.js\">fa.js</a><br> <br> This account and art belongs to <a href=\"/user/andrewneo\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif\" align=\"middle\" title=\"andrewneo\" alt=\"andrewneo\">&nbsp;andrewneo</a>, the artist of the work is <a href=\"/user/tinderhoof\" class=\"iconusername\"><img src=\"//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif\" align=\"middle\" title=\"tinderhoof\" alt=\"tinderhoof\">&nbsp;tinderhoof</a>. <a class=\"auto_link named_url\" href=\"https://www.furaffinity.net/view/23617101/\">Original upload is here</a>`
     );
-    expect(actual.when).toEqual(getDateFromLocal("2024-10-26T22:36:00"));
+    expect(actual.when.toISOString()).toEqual(
+      getDateFromLocalStr("2024-10-26T22:36:00")
+    );
     expect(actual.keywords).toEqual(["wolf", "plushie", "integration_test"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(4);
@@ -123,7 +126,9 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is a "story" for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was computer generated and no copyright is claimed.`
     );
-    expect(actual.when).toEqual(getDateFromLocal("2024-10-26T22:45:00"));
+    expect(actual.when.toISOString()).toEqual(
+      getDateFromLocalStr("2024-10-26T22:45:00")
+    );
     expect(actual.keywords).toEqual(["integration_test", "scifi"]);
     expect(actual.nav_items).toHaveLength(2);
     expect(actual.comments).toHaveLength(0);
@@ -154,7 +159,9 @@ describe("submission", () => {
     expect(normalizedHtml).toEqual(
       `This is audio for integration testing <a class="auto_link named_url" href="https://github.com/cheeplusplus/fa.js">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`
     );
-    expect(actual.when).toEqual(getDateFromLocal("2024-10-26T22:54:00"));
+    expect(actual.when.toISOString()).toEqual(
+      getDateFromLocalStr("2024-10-26T22:54:00")
+    );
     expect(actual.keywords).toEqual([
       "integration_test",
       "music",
