@@ -15,7 +15,6 @@ import {
   parensNumberMatchRegex,
   pick,
   pickCheckboxValue,
-  pickDateFromThumbnail,
   pickFigureId,
   pickFormValue,
   pickFromTimestampData,
@@ -165,7 +164,6 @@ export class FurAffinityClient {
             id: pickFigureId(),
             self_link: pickLink(SELECTOR_VIEW),
             thumb_url: pickImage(`${SELECTOR_VIEW} img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} img`),
           },
         },
         favorites: {
@@ -174,7 +172,6 @@ export class FurAffinityClient {
             id: pickFigureId(),
             self_link: pickLink(SELECTOR_VIEW),
             thumb_url: pickImage(`${SELECTOR_VIEW} img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} img`),
           },
         },
         artist_information: {
@@ -262,7 +259,6 @@ export class FurAffinityClient {
             id: pickFigureId(),
             self_link: pickLink(SELECTOR_VIEW),
             thumb_url: pickImage(`${SELECTOR_VIEW} img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
           },
         },
         favorites: {
@@ -271,7 +267,6 @@ export class FurAffinityClient {
             id: pickFigureId(),
             self_link: pickLink(SELECTOR_VIEW),
             thumb_url: pickImage(`${SELECTOR_VIEW} img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
           },
         },
         artist_information: {
@@ -442,9 +437,6 @@ export class FurAffinityClient {
         },
         self_link: pickLink(`#profilepic-submission ${SELECTOR_VIEW}`),
         thumb_url: pickImage(`#profilepic-submission ${SELECTOR_VIEW} > img`),
-        when: pickDateFromThumbnail(
-          `#profilepic-submission ${SELECTOR_VIEW} > img`
-        ),
       },
       beta: {
         id: {
@@ -454,9 +446,6 @@ export class FurAffinityClient {
         },
         self_link: pickLink(`${profileIdCellBeta} ${SELECTOR_VIEW}`),
         thumb_url: pickImage(`${profileIdCellBeta} ${SELECTOR_VIEW} > img`),
-        when: pickDateFromThumbnail(
-          `${profileIdCellBeta} ${SELECTOR_VIEW} > img`
-        ),
       },
     });
 
@@ -1396,7 +1385,6 @@ export class FurAffinityClient {
             title: `figcaption ${SELECTOR_VIEW}`,
             artist_name: `figcaption ${SELECTOR_USER}`,
             thumb_url: pickImage(SELECTOR_THUMB),
-            when: pickDateFromThumbnail(SELECTOR_THUMB),
           },
         },
         more: {
@@ -1414,7 +1402,6 @@ export class FurAffinityClient {
             title: `figcaption ${SELECTOR_VIEW}`,
             artist_name: `figcaption ${SELECTOR_USER}`,
             thumb_url: pickImage(SELECTOR_THUMB),
-            when: pickDateFromThumbnail(SELECTOR_THUMB),
           },
         },
         more: {
@@ -1506,7 +1493,6 @@ export class FurAffinityClient {
             title: "figcaption > label > p:nth-child(2) > a",
             artist_name: "figcaption > label > p:nth-child(3) > a",
             thumb_url: pickImage("b > u > a > img"),
-            when: pickDateFromThumbnail("b > u > a > img"),
           },
         },
         nextPage: {
@@ -1528,7 +1514,6 @@ export class FurAffinityClient {
             title: `figcaption label p ${SELECTOR_VIEW}`,
             artist_name: `figcaption label p ${SELECTOR_USER}`,
             thumb_url: pickImage(`${SELECTOR_VIEW} > img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
           },
         },
         nextPage: {
@@ -1578,7 +1563,6 @@ export class FurAffinityClient {
             title: pick("figcaption > p:nth-child(1) > a", "title"),
             artist_name: pick("figcaption > p:nth-child(2) > a", "title"),
             thumb_url: pickImage("b > u > a > img"),
-            when: pickDateFromThumbnail("b > u > a > img"),
           },
         },
         nextPage: pickLink("a.button-link.right"),
@@ -1594,7 +1578,6 @@ export class FurAffinityClient {
             title: `figcaption p:nth-child(1) ${SELECTOR_VIEW}`,
             artist_name: `figcaption p:nth-child(2) ${SELECTOR_USER}`,
             thumb_url: pickImage(`${SELECTOR_VIEW} > img`),
-            when: pickDateFromThumbnail(`${SELECTOR_VIEW} > img`),
           },
         },
         nextPage: pickFormValue("form:has(>button:contains('Next'))"),

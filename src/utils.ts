@@ -130,25 +130,6 @@ export function pickFigureId() {
   };
 }
 
-export function pickDateFromThumbnail(
-  selector: string = "img",
-  attr: string = "src"
-) {
-  return {
-    selector,
-    attr,
-    convert: (source: string) => {
-      const res = thumbnailRegex.exec(source);
-      if (!res || res.length < 4) {
-        return undefined;
-      }
-
-      const timestamp = parseInt(res[3], 10);
-      return new Date(timestamp * 1000);
-    },
-  };
-}
-
 export function pickWhenFromSpan(selector: string, timezone?: string) {
   return {
     selector,

@@ -51,7 +51,6 @@ export interface SubmissionListing {
   title: string;
   artist_name: string;
   thumb_url: string;
-  when: Date;
 }
 
 export interface Submissions {
@@ -106,7 +105,6 @@ export interface UserPage {
     self_link: string;
     // "title": string; // TODO: Pull these out of the page's submission_data variable
     thumb_url: string;
-    when: Date;
   }[];
   favorites: {
     id: number;
@@ -114,7 +112,6 @@ export interface UserPage {
     // "title": string;
     // "artist_name": string;
     thumb_url: string;
-    when: Date;
   }[];
   top_journal?: {
     id: number;
@@ -129,7 +126,6 @@ export interface UserPage {
     id: number;
     self_link: string;
     thumb_url: string;
-    when: Date;
   };
   artist_information: { title: string; value: string }[];
   contact_information: { service: string; link: string; value: string }[];
