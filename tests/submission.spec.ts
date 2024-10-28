@@ -1,4 +1,4 @@
-import { format, formatISO } from "date-fns";
+import { format } from "date-fns";
 import { tz, TZDate } from "@date-fns/tz";
 import { ACCT_TZ, themedIt } from "./shared";
 
@@ -7,10 +7,7 @@ import "./matchers";
 const getDateFromEpoch = (dt: number) => new TZDate(dt, ACCT_TZ);
 
 describe("submission", () => {
-  // TODO: Figure out exactly when this changes
-  const liveThumbDateStr = format(new Date(), "yyyyMMdd", {
-    in: tz("US/Eastern"),
-  });
+  const liveThumbDateStr = format(new Date(), "yyyyMMdd", { in: tz(ACCT_TZ) });
 
   themedIt("type 'image' is correctly parsed", async (client, theme) => {
     const actual = await client.getSubmission(58614470);
