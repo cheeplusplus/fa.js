@@ -32,7 +32,9 @@ describe("userpage", () => {
       expect.stringContaining("Submissions: 3")
     );
     expect(normalize(actual.statistics_html)).toEqual(
-      expect.stringContaining("Submissions:</span> 3")
+      expect.stringContaining(
+        `Submissions:${theme === "beta" ? "</span>" : "</b>"} 3`
+      )
     );
     expect(actual.latest_submissions).toEqual(
       expect.arrayContaining([
