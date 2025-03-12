@@ -40,7 +40,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedGallerySubmission),
-        ])
+        ]),
       );
     });
 
@@ -54,7 +54,7 @@ describe("user galleries", () => {
           expect(submissions).toEqual(
             expect.arrayContaining([
               expect.objectContaining(expectedGallerySubmission),
-            ])
+            ]),
           );
         }
       }
@@ -78,7 +78,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedScrapsSubmission),
-        ])
+        ]),
       );
     });
 
@@ -92,7 +92,7 @@ describe("user galleries", () => {
           expect(submissions).toEqual(
             expect.arrayContaining([
               expect.objectContaining(expectedScrapsSubmission),
-            ])
+            ]),
           );
         }
       }
@@ -107,7 +107,7 @@ describe("user galleries", () => {
 
       const actual = await client.getUserFavoritesPage(
         "dragoneer",
-        "1622776532/next"
+        "1622776532/next",
       );
       expect(actual.self_link).toEqual(expectedSelfLink);
       expect(actual.submissions).toHaveLength(48); // technically depends on account config
@@ -119,7 +119,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedFavesSubmission),
-        ])
+        ]),
       );
     });
 
@@ -133,7 +133,7 @@ describe("user galleries", () => {
           expect(submissions).toEqual(
             expect.arrayContaining([
               expect.objectContaining(expectedFavesSubmission),
-            ])
+            ]),
           );
         }
 
