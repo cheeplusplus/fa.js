@@ -15,6 +15,7 @@
         "build": "tsc -p tsconfig.json",
         "test": "jest --setupFiles dotenv/config",
         "test:coverage": "jest --setupFiles dotenv/config --coverage",
+        "test:coverage:ci": "jest --setupFiles dotenv/config --coverage --coverageReporters json-summary",
         "format": "prettier --write tests/*.ts",
         "format:check": "prettier --check tests/*.ts"
     },

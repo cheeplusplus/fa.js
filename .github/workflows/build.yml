@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: npm run build
       - name: Test
-        run: npm run test:coverage --coverageReporters json-summary
+        run: npm run test:coverage:ci
         env:
           FA_CLASSIC_COOKIES: ${{ secrets.FA_CLASSIC_COOKIES }}
           FA_BETA_COOKIES: ${{ secrets.FA_BETA_COOKIES }}
