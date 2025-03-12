@@ -11,11 +11,10 @@ describe("userpage", () => {
 
   themedIt("loads correctly", async (client, theme) => {
     const actual = await client.getUserPage(ACCT_PROFILE_USER);
-    console.log(theme, actual);
     expect(actual.user_name).toEqual(ACCT_PROFILE_USER);
     expect(actual.self_link).toEqual(`/user/${ACCT_PROFILE_USER}/`);
     expect(actual.user_thumb_url).toEqual(
-      "https://a.furaffinity.net/20241027/kauko-fadotjs-test-a.gif"
+      `https://a.furaffinity.net/${liveThumbDateStr}/kauko-fadotjs-test-a.gif`
     );
     // Note: the classic theme has extra crap - eventually this should get cleaned up
     expect(normalize(actual.header_text)).toEqual(
@@ -33,18 +32,18 @@ describe("userpage", () => {
       expect.stringContaining("Submissions: 3")
     );
     expect(normalize(actual.statistics_html)).toEqual(
-      expect.stringContaining("Submissions: 3")
+      expect.stringContaining("Submissions:</span> 3")
     );
     expect(actual.latest_submissions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: 58614563,
-          self_link: "/view/58614563/",
+          id: 60183782,
+          self_link: "/view/60183782/",
           thumb_url: expect.stringMatching(ThumbMatcher),
         }),
         expect.objectContaining({
-          id: 58614512,
-          self_link: "/view/58614512/",
+          id: 58614563,
+          self_link: "/view/58614563/",
           thumb_url: expect.stringMatching(ThumbMatcher),
         }),
         expect.objectContaining({
