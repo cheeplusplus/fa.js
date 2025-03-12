@@ -210,8 +210,8 @@ export class FurAffinityClient {
                 return parseInt(value.split("-")[1]);
               },
             },
-            user_name: `.from-header > ${SELECTOR_USER}`,
-            user_url: pickLink(`.from-header > ${SELECTOR_USER}`),
+            user_name: `.from-header ${SELECTOR_USER} span.js-displayName`,
+            user_url: pickLink(`.from-header ${SELECTOR_USER}`),
             user_thumb_url: pickImage(`${SELECTOR_USER} > img.avatar`),
             body_text: "div.no_overflow",
             body_html: {
@@ -224,16 +224,8 @@ export class FurAffinityClient {
       },
       beta: {
         self_link: pickStaticValue(path),
-        user_name: {
-          selector:
-            "#pageid-userpage userpage-nav-header > userpage-nav-user-details > h1 > username",
-          convert: (text: string) => {
-            if (text?.trim()?.startsWith("~")) {
-              return text.trim().substr(1);
-            }
-            return text;
-          },
-        },
+        user_name:
+          `#pageid-userpage userpage-nav-header > userpage-nav-user-details username ${SELECTOR_USER} span.js-displayName`,
         user_thumb_url: pickImage(
           `#pageid-userpage userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER} > img`
         ),
@@ -327,7 +319,7 @@ export class FurAffinityClient {
                 return parseInt(value.split("-")[1]);
               },
             },
-            user_name: `comment-username ${SELECTOR_USER} > h3`,
+            user_name: `comment-username ${SELECTOR_USER} span.js-displayName`,
             user_url: pickLink(`comment-username ${SELECTOR_USER}`),
             user_thumb_url: pickImage(
               `comment-container > div.avatar > ${SELECTOR_USER} > img`
@@ -696,9 +688,9 @@ export class FurAffinityClient {
             return undefined;
           }) as any,
         },
-        artist_name: `#page-submission div.classic-submission-title.information > ${SELECTOR_USER}`,
+        artist_name: `#page-submission div.classic-submission-title.information ${SELECTOR_USER} span`,
         artist_url: pickLink(
-          `#page-submission div.classic-submission-title.information > ${SELECTOR_USER}`
+          `#page-submission div.classic-submission-title.information ${SELECTOR_USER}`
         ),
         artist_thumb_url: pickImage(
           `#page-submission div.classic-submissiont-title.avatar ${SELECTOR_USER} > img`
@@ -772,7 +764,7 @@ export class FurAffinityClient {
             return undefined;
           }) as any,
         },
-        artist_name: `#submission_page .submission-id-sub-container ${SELECTOR_USER} > strong`,
+        artist_name: `#submission_page .submission-id-sub-container ${SELECTOR_USER} > span`,
         artist_url: pickLink(
           `#submission_page .submission-id-container ${SELECTOR_USER}`
         ),
@@ -789,7 +781,7 @@ export class FurAffinityClient {
         ),
         keywords: {
           listItem:
-            "#submission_page div.submission-sidebar section.tags-row > span.tags > a",
+            `#submission_page div.submission-sidebar section.tags-row > span.tags a[href*="/search/"]`,
           data: {
             value: "",
           },
@@ -824,7 +816,7 @@ export class FurAffinityClient {
             user_name: "div > span",
             user_url: pickLink(),
             user_thumb_url: pickImage(),
-            when: pickWhenFromSpan("div > small > span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
         comments: {
@@ -840,7 +832,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
         journal_comments: {
@@ -857,7 +849,7 @@ export class FurAffinityClient {
             },
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
         shouts: {
@@ -867,7 +859,7 @@ export class FurAffinityClient {
             id: pickCheckboxValue(),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
         favorites: {
@@ -883,7 +875,7 @@ export class FurAffinityClient {
             submission_url: pickLink(SELECTOR_VIEW),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
         journals: {
@@ -894,7 +886,7 @@ export class FurAffinityClient {
             journal_url: pickLink(SELECTOR_JOURNAL),
             user_name: SELECTOR_USER,
             user_url: pickLink(SELECTOR_USER),
-            when: pickWhenFromSpan("span"),
+            when: pickWhenFromSpan("span.popup_date"),
           },
         },
       },
@@ -997,7 +989,7 @@ export class FurAffinityClient {
         id: pickStaticValue(ensureIdIsNumber(id)),
         self_link: pickStaticValue(path),
         title: "#page-journal td.journal-title-box > b > font > div",
-        user_name: `#page-journal td.journal-title-box ${SELECTOR_USER}`,
+        user_name: `#page-journal td.journal-title-box ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
           `#page-journal td.journal-title-box ${SELECTOR_USER}`
         ),
@@ -1018,16 +1010,7 @@ export class FurAffinityClient {
         id: pickStaticValue(ensureIdIsNumber(id)),
         self_link: pickStaticValue(path),
         title: ".content .section-header h2.journal-title",
-        user_name: {
-          selector:
-            "userpage-nav-header > userpage-nav-user-details > h1 > username",
-          convert: (text: string) => {
-            if (text?.trim()?.startsWith("~")) {
-              return text.trim().substr(1);
-            }
-            return text;
-          },
-        },
+        user_name: `userpage-nav-header > userpage-nav-user-details ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
           `userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER}.current`
         ),
@@ -1054,8 +1037,8 @@ export class FurAffinityClient {
             id: pickCheckboxValue(),
             self_link: pickLink("td.subject > a"),
             title: "td.subject > a",
-            user_name: "td.col-from > a",
-            user_url: pickLink("td.col-from > a"),
+            user_name: `td.col-from ${SELECTOR_USER} span.js-displayName`,
+            user_url: pickLink(`td.col-from ${SELECTOR_USER}`),
             unread: {
               selector: "td.subject > a",
               attr: "class",
@@ -1067,15 +1050,15 @@ export class FurAffinityClient {
       },
       beta: {
         notes: {
-          listItem: "#notes-list > div.message-center-pms-note-list-view",
+          listItem: "div.message-center-pms-list > div.c-noteListItem",
           data: {
             id: pickCheckboxValue(),
             self_link: pickLink('a[href*="/msg/pms/"]'),
-            title: "div.note-list-subject",
-            user_name: `.note-list-sender ${SELECTOR_USER}`,
+            title: "div.c-noteListItem__subject",
+            user_name: `.note-list-sender ${SELECTOR_USER} span.js-displayName`,
             user_url: pickLink(`.note-list-sender ${SELECTOR_USER}`),
             unread: {
-              selector: "div.note-list-subject",
+              selector: "div.c-notelink",
               attr: "class",
               convert: (s: string) => !!(s && s.indexOf("unread") > -1),
             },
@@ -1103,10 +1086,9 @@ export class FurAffinityClient {
         id: pickStaticValue(ensureIdIsNumber(id)),
         self_link: pickStaticValue(`/viewmessage/${id}/`),
         title: "#pms-form td.note-view-container td.head em.title",
-        user_name:
-          "#pms-form td.note-view-container td.head em:nth-child(2) > a",
+        user_name: `#pms-form td.note-view-container td.head em:nth-child(2) ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
-          "#pms-form td.note-view-container td.head em:nth-child(2) > a"
+          `#pms-form td.note-view-container td.head em:nth-child(2) ${SELECTOR_USER}`,
         ),
         body_text: {
           selector: "#pms-form td.note-view-container td.text",
@@ -1124,9 +1106,9 @@ export class FurAffinityClient {
         id: pickStaticValue(ensureIdIsNumber(id)),
         self_link: pickStaticValue(path),
         title: "#message > .section-header > h2",
-        user_name: `#message > .section-header .addresses > ${SELECTOR_USER}:nth-child(1) strong`,
+        user_name: `#message > .section-header .addresses > div.c-usernameBlock:nth-child(1) ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
-          `#message > .section-header .avatar > ${SELECTOR_USER}`
+          `#message > .section-header .addresses > div.c-usernameBlock:nth-child(1) ${SELECTOR_USER}`
         ),
         body_text: {
           selector: "#message .section-body div.user-submitted-links",
@@ -1241,8 +1223,8 @@ export class FurAffinityClient {
                 attr: "href",
                 convert: getViewPath,
               },
-              submission_title: `.stats-page-submission-details > ${SELECTOR_VIEW} > h3`,
-              submission_url: pickLink(SELECTOR_VIEW),
+              submission_title: `.stat-submission-title > ${SELECTOR_VIEW}`,
+              submission_url: pickLink(`.stat-submission-title > ${SELECTOR_VIEW}`),
               thumb_url: pickImage(SELECTOR_THUMB),
               when: pickWhenFromSpan(
                 ".stats-page-submission-details span.popup_date"
@@ -1287,11 +1269,9 @@ export class FurAffinityClient {
       },
       beta: {
         id: pickStaticValue(ensureIdIsNumber(id)),
-        body_text:
-          "#site-content > form > table > tbody > tr > td > table:nth-child(1) > tbody > tr:nth-child(2) > td",
+        body_text: "#page-replyto section.original-comment div.section-body",
         body_html: {
-          selector:
-            "#site-content > form > table > tbody > tr > td > table:nth-child(1) > tbody > tr:nth-child(2) > td",
+          selector: "#page-replyto section.original-comment div.section-body",
           how: "html",
         },
       },
@@ -1314,11 +1294,8 @@ export class FurAffinityClient {
             convert: (s: string) => parseInt(s.split(":")[1]),
           },
           self_link: pickLink("a.comment-link"),
-          user_name:
-            "tbody > tr:nth-child(1) > td:nth-child(3) > div > ul > li > b",
-          user_url: pickLink(
-            "tbody > tr:nth-child(1) > td:nth-child(3) > div > ul > li > ul > li:nth-child(1) > a"
-          ),
+          user_name: `div.menu ${SELECTOR_USER} span.js-displayName`,
+          user_url: pickLink(`div.menu ${SELECTOR_USER}`),
           user_thumb_url: pickImage("img.avatar"),
           body_text: "div.message-text",
           body_html: {
@@ -1343,8 +1320,8 @@ export class FurAffinityClient {
             convert: (s: string) => parseInt(s.split(":")[1]),
           },
           self_link: pickLink("a.comment-link"),
-          user_name: `comment-username .comment_username`,
-          user_url: pickLink(`.avatar > ${SELECTOR_USER}`),
+          user_name: `comment-username ${SELECTOR_USER} span.js-displayName`,
+          user_url: pickLink(`comment-username ${SELECTOR_USER}`),
           user_thumb_url: pickImage(
             `.avatar > ${SELECTOR_USER} > img.comment_useravatar`
           ),
