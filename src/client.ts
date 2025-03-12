@@ -128,17 +128,9 @@ export class FurAffinityClient {
     >(body, {
       classic: {
         self_link: pickStaticValue(path),
-        user_name: {
-          selector: "#page-userpage table.maintable > tbody tr td.lead b",
-          convert: (text: string) => {
-            if (text?.startsWith("~")) {
-              return text.substr(1);
-            }
-            return text;
-          },
-        },
+        user_name: `#page-userpage > tbody > tr:nth-child(1) > td > table > tbody > tr > td > table > tbody > tr > td > table > tbody > tr:nth-child(2) ${SELECTOR_USER} span.js-displayName`,
         user_thumb_url: pickImage(
-          `#page-userpage ${SELECTOR_USER} > img.avatar`
+          `#page-userpage > tbody > tr:nth-child(1) > td > table > tbody > tr > td > table > tbody > tr > td > table > tbody > tr:nth-child(1) > td:nth-child(2) ${SELECTOR_USER} > img.avatar`
         ),
         header_text:
           "#page-userpage > tbody > tr:nth-child(1) > td > table > tbody > tr > td > table > tbody > tr > td > table > tbody > tr:nth-child(3) > td.alt1 > table > tbody > tr > td:nth-child(1)",
@@ -224,8 +216,7 @@ export class FurAffinityClient {
       },
       beta: {
         self_link: pickStaticValue(path),
-        user_name:
-          `#pageid-userpage userpage-nav-header > userpage-nav-user-details username ${SELECTOR_USER} span.js-displayName`,
+        user_name: `#pageid-userpage userpage-nav-header > userpage-nav-user-details username ${SELECTOR_USER} span.js-displayName`,
         user_thumb_url: pickImage(
           `#pageid-userpage userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER} > img`
         ),
@@ -780,8 +771,7 @@ export class FurAffinityClient {
           "#submission_page .submission-id-container span.popup_date"
         ),
         keywords: {
-          listItem:
-            `#submission_page div.submission-sidebar section.tags-row > span.tags a[href*="/search/"]`,
+          listItem: `#submission_page div.submission-sidebar section.tags-row > span.tags a[href*="/search/"]`,
           data: {
             value: "",
           },
@@ -1088,7 +1078,7 @@ export class FurAffinityClient {
         title: "#pms-form td.note-view-container td.head em.title",
         user_name: `#pms-form td.note-view-container td.head em:nth-child(2) ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
-          `#pms-form td.note-view-container td.head em:nth-child(2) ${SELECTOR_USER}`,
+          `#pms-form td.note-view-container td.head em:nth-child(2) ${SELECTOR_USER}`
         ),
         body_text: {
           selector: "#pms-form td.note-view-container td.text",
@@ -1224,7 +1214,9 @@ export class FurAffinityClient {
                 convert: getViewPath,
               },
               submission_title: `.stat-submission-title > ${SELECTOR_VIEW}`,
-              submission_url: pickLink(`.stat-submission-title > ${SELECTOR_VIEW}`),
+              submission_url: pickLink(
+                `.stat-submission-title > ${SELECTOR_VIEW}`
+              ),
               thumb_url: pickImage(SELECTOR_THUMB),
               when: pickWhenFromSpan(
                 ".stats-page-submission-details span.popup_date"
