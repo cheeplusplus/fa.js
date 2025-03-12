@@ -1,13 +1,12 @@
-import { format } from "date-fns";
-import { tz, TZDate } from "@date-fns/tz";
-import { ACCT_TZ, themedIt } from "./shared";
+import { TZDate } from "@date-fns/tz";
+import { ACCT_TZ, getLiveThumbnailDate, themedIt } from "./shared";
 
 import "./matchers";
 
 const getDateFromEpoch = (dt: number) => new TZDate(dt, ACCT_TZ);
 
 describe("submission", () => {
-  const liveThumbDateStr = format(new Date(), "yyyyMMdd", { in: tz(ACCT_TZ) });
+  const liveThumbDateStr = getLiveThumbnailDate();
 
   themedIt("type 'image' is correctly parsed", async (client, theme) => {
     const actual = await client.getSubmission(58614470);

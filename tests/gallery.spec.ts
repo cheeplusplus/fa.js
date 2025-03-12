@@ -1,13 +1,11 @@
-import { themedIt } from "./shared";
+import { themedIt, ThumbMatcher } from "./shared";
 
 const expectedGallerySubmission = {
   id: 48551340,
   self_link: "/view/48551340/",
   title: "Ref: Preyfar",
   artist_name: "Dragoneer",
-  thumb_url: expect.stringMatching(
-    /https:\/\/t\.furaffinity\.net\/48551340@(\d+)-(\d+)\.jpg/
-  ),
+  thumb_url: expect.stringMatching(ThumbMatcher),
 };
 
 const expectedScrapsSubmission = {
@@ -15,9 +13,7 @@ const expectedScrapsSubmission = {
   self_link: "/view/9653045/",
   title: "My lil' Copilots",
   artist_name: "Dragoneer",
-  thumb_url: expect.stringMatching(
-    /https:\/\/t\.furaffinity\.net\/9653045@(\d+)-(\d+)\.jpg/
-  ),
+  thumb_url: expect.stringMatching(ThumbMatcher),
 };
 
 const expectedFavesSubmission = {
@@ -25,9 +21,7 @@ const expectedFavesSubmission = {
   self_link: "/view/56389000/",
   title: "Dragoneer sfw",
   artist_name: "CatrineBluesky",
-  thumb_url: expect.stringMatching(
-    /https:\/\/t\.furaffinity\.net\/56389000@(\d+)-(\d+)\.jpg/
-  ),
+  thumb_url: expect.stringMatching(ThumbMatcher),
 };
 
 describe("user galleries", () => {

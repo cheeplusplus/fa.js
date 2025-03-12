@@ -1,6 +1,12 @@
+import { format } from "date-fns";
 import { FurAffinityClient } from "../src/client";
+import { tz } from "@date-fns/tz";
 
+export const ACCT_PROFILE_USER = "kauko-fadotjs-test-a"; // always use this for hardcoded values
 export const ACCT_TZ = "US/Pacific";
+
+export const ThumbMatcher =
+  /https:\/\/t\.furaffinity\.net\/(\d+)@(\d+)-(\d+)\.jpg/;
 
 function getClient(targetTheme: "classic" | "beta") {
   const cookies =
@@ -28,4 +34,12 @@ export function themedIt(
       return callback(client, theme);
     }
   );
+}
+
+export function getLiveThumbnailDate() {
+  return format(new Date(), "yyyyMMdd", { in: tz(ACCT_TZ) });
+}
+
+export function normalize(text: string) {
+  return text.replace(/\s+/g, " ");
 }
