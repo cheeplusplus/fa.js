@@ -1,4 +1,4 @@
-name: Build
+name: Build package
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
     - cron: '0 10 * * *'
 
 jobs:
-  next:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
