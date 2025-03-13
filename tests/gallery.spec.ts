@@ -1,3 +1,4 @@
+import { getDateFromEpoch } from "./matchers";
 import { themedIt, ThumbMatcher } from "./shared";
 
 const expectedGallerySubmission = {
@@ -24,6 +25,14 @@ const expectedFavesSubmission = {
   thumb_url: expect.stringMatching(ThumbMatcher),
 };
 
+const expectedJournal = {
+  id: 10112718,
+  self_link: "/journal/10112718/",
+  title: "2022 Checking In",
+  body_text: expect.stringMatching("As I said. Hell of a year."),
+  body_html: expect.stringMatching("As I said. Hell of a year."),
+};
+
 describe("user galleries", () => {
   describe("gallery", () => {
     themedIt("specific page loads correctly", async (client, theme) => {
@@ -40,27 +49,30 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedGallerySubmission),
-        ]),
+        ])
       );
     });
 
-    themedIt("walks through all pages correctly", async (client, theme) => {
-      let pageCount = 0;
-      for await (const submissions of client.getUserGallery("dragoneer")) {
-        pageCount++;
-        expect(submissions.length).toBeGreaterThanOrEqual(1);
+    themedIt(
+      "walks through multiple pages correctly",
+      async (client, theme) => {
+        let pageCount = 0;
+        for await (const submissions of client.getUserGallery("dragoneer")) {
+          pageCount++;
+          expect(submissions.length).toBeGreaterThanOrEqual(1);
 
-        if (pageCount === 2) {
-          expect(submissions).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining(expectedGallerySubmission),
-            ]),
-          );
+          if (pageCount === 2) {
+            expect(submissions).toEqual(
+              expect.arrayContaining([
+                expect.objectContaining(expectedGallerySubmission),
+              ])
+            );
+          }
         }
-      }
 
-      expect(pageCount).toEqual(6);
-    });
+        expect(pageCount).toEqual(6);
+      }
+    );
   });
 
   describe("scraps", () => {
@@ -78,27 +90,30 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedScrapsSubmission),
-        ]),
+        ])
       );
     });
 
-    themedIt("walks through all pages correctly", async (client, theme) => {
-      let pageCount = 0;
-      for await (const submissions of client.getUserScraps("dragoneer")) {
-        pageCount++;
-        expect(submissions.length).toBeGreaterThanOrEqual(1);
+    themedIt(
+      "walks through multiple pages correctly",
+      async (client, theme) => {
+        let pageCount = 0;
+        for await (const submissions of client.getUserScraps("dragoneer")) {
+          pageCount++;
+          expect(submissions.length).toBeGreaterThanOrEqual(1);
 
-        if (pageCount === 2) {
-          expect(submissions).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining(expectedScrapsSubmission),
-            ]),
-          );
+          if (pageCount === 2) {
+            expect(submissions).toEqual(
+              expect.arrayContaining([
+                expect.objectContaining(expectedScrapsSubmission),
+              ])
+            );
+          }
         }
-      }
 
-      expect(pageCount).toEqual(4);
-    });
+        expect(pageCount).toEqual(4);
+      }
+    );
   });
 
   describe("favorites", () => {
@@ -107,7 +122,7 @@ describe("user galleries", () => {
 
       const actual = await client.getUserFavoritesPage(
         "dragoneer",
-        "1622776532/next",
+        "1622776532/next"
       );
       expect(actual.self_link).toEqual(expectedSelfLink);
       expect(actual.submissions).toHaveLength(48); // technically depends on account config
@@ -119,32 +134,78 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedFavesSubmission),
-        ]),
+        ])
       );
     });
 
-    themedIt("walks through all pages correctly", async (client, theme) => {
-      let pageCount = 0;
-      for await (const submissions of client.getUserFavorites("dragoneer")) {
-        pageCount++;
-        expect(submissions.length).toBeGreaterThanOrEqual(1);
+    themedIt(
+      "walks through multiple pages correctly",
+      async (client, theme) => {
+        let pageCount = 0;
+        for await (const submissions of client.getUserFavorites("dragoneer")) {
+          pageCount++;
+          expect(submissions.length).toBeGreaterThanOrEqual(1);
 
-        if (pageCount === 2) {
-          expect(submissions).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining(expectedFavesSubmission),
-            ]),
-          );
+          if (pageCount === 2) {
+            expect(submissions).toEqual(
+              expect.arrayContaining([
+                expect.objectContaining(expectedFavesSubmission),
+              ])
+            );
+          }
+
+          // Cut off early
+          if (pageCount > 2) {
+            break;
+          }
         }
 
         // Cut off early
-        if (pageCount > 2) {
-          break;
-        }
+        expect(pageCount).toEqual(3);
       }
+    );
+  });
 
-      // Cut off early
-      expect(pageCount).toEqual(3);
+  describe("journals", () => {
+    themedIt("specific page loads correctly", async (client, theme) => {
+      const expectedSelfLink = "/journals/dragoneer/2";
+
+      const actual = await client.getUserJournalsPage("dragoneer", 2);
+      expect(actual.self_link).toEqual(expectedSelfLink);
+      expect(actual.journals).toHaveLength(25);
+      expect(actual.nextPage).toBeDefined();
+      expect(actual.nextPage).not.toEqual(expectedSelfLink);
+      expect(actual.previousPage).toBeDefined();
+      expect(actual.previousPage).not.toEqual(expectedSelfLink);
+
+      expect(actual.journals).toEqual(
+        expect.arrayContaining([expect.objectContaining(expectedJournal)])
+      );
     });
+
+    themedIt(
+      "walks through multiple pages correctly",
+      async (client, theme) => {
+        let pageCount = 0;
+        for await (const journals of client.getUserJournals("dragoneer")) {
+          pageCount++;
+          expect(journals.length).toBeGreaterThanOrEqual(1);
+
+          if (pageCount === 2) {
+            expect(journals).toEqual(
+              expect.arrayContaining([expect.objectContaining(expectedJournal)])
+            );
+          }
+
+          // Cut off early
+          if (pageCount > 2) {
+            break;
+          }
+        }
+
+        // Cut off early
+        expect(pageCount).toEqual(3);
+      }
+    );
   });
 });

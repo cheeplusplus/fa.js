@@ -1,5 +1,9 @@
+import { TZDate } from "@date-fns/tz";
 import { expect } from "@jest/globals";
 import { differenceInSeconds } from "date-fns";
+import { ACCT_TZ } from "./shared";
+
+export const getDateFromEpoch = (dt: number) => new TZDate(dt, ACCT_TZ);
 
 interface CustomMatcherResult {
   pass: boolean;

@@ -4,6 +4,8 @@ import { tz } from "@date-fns/tz";
 
 export const ACCT_PROFILE_USER = "kauko-fadotjs-test-a"; // always use this for hardcoded values
 export const ACCT_TZ = "US/Pacific";
+export const THEME_PROFILE_USER = (theme: "classic" | "beta") =>
+  theme === "classic" ? "kauko-fadotjs-test-a" : "kauko-fadotjs-test-b";
 
 export const ThumbMatcher =
   /https:\/\/t\.furaffinity\.net\/(\d+)@(\d+)-(\d+)\.jpg/;
@@ -25,14 +27,14 @@ function getClient(targetTheme: "classic" | "beta") {
 
 export function themedIt(
   description: string,
-  callback: (client: FurAffinityClient, theme: "classic" | "beta") => any,
+  callback: (client: FurAffinityClient, theme: "classic" | "beta") => any
 ) {
   test.each([["classic"], ["beta"]])(
     `${description} (%s theme)`,
     (theme: "classic" | "beta") => {
       const client = getClient(theme);
       return callback(client, theme);
-    },
+    }
   );
 }
 
