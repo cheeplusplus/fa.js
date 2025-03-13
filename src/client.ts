@@ -1467,10 +1467,12 @@ export class FurAffinityClient {
         nextPage: {
           selector: "#messages-form .navigation a[class*='more']:not(.prev)",
           attr: "href",
+          convert: (str: string) => str ? str : null,
         },
         previousPage: {
           selector: "#messages-form .navigation a[class*='more'].prev",
           attr: "href",
+          convert: (str: string) => str ? str : null,
         },
       },
       beta: {
@@ -1489,11 +1491,13 @@ export class FurAffinityClient {
           selector:
             "#messagecenter-new-submissions div > a[class*='more']:not(.prev)",
           attr: "href",
+          convert: (value: string) => value || null,
         },
         previousPage: {
           selector:
             "#messagecenter-new-submissions div > a[class*='more'].prev",
           attr: "href",
+          convert: (value: string) => value || null,
         },
       },
     });
