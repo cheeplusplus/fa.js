@@ -27,14 +27,14 @@ function getClient(targetTheme: "classic" | "beta") {
 
 export function themedIt(
   description: string,
-  callback: (client: FurAffinityClient, theme: "classic" | "beta") => any
+  callback: (client: FurAffinityClient, theme: "classic" | "beta") => any,
 ) {
   test.each([["classic"], ["beta"]])(
     `${description} (%s theme)`,
     (theme: "classic" | "beta") => {
       const client = getClient(theme);
       return callback(client, theme);
-    }
+    },
   );
 }
 

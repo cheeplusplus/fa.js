@@ -49,7 +49,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedGallerySubmission),
-        ])
+        ]),
       );
     });
 
@@ -65,13 +65,13 @@ describe("user galleries", () => {
             expect(submissions).toEqual(
               expect.arrayContaining([
                 expect.objectContaining(expectedGallerySubmission),
-              ])
+              ]),
             );
           }
         }
 
         expect(pageCount).toEqual(6);
-      }
+      },
     );
   });
 
@@ -90,7 +90,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedScrapsSubmission),
-        ])
+        ]),
       );
     });
 
@@ -106,13 +106,13 @@ describe("user galleries", () => {
             expect(submissions).toEqual(
               expect.arrayContaining([
                 expect.objectContaining(expectedScrapsSubmission),
-              ])
+              ]),
             );
           }
         }
 
         expect(pageCount).toEqual(4);
-      }
+      },
     );
   });
 
@@ -122,7 +122,7 @@ describe("user galleries", () => {
 
       const actual = await client.getUserFavoritesPage(
         "dragoneer",
-        "1622776532/next"
+        "1622776532/next",
       );
       expect(actual.self_link).toEqual(expectedSelfLink);
       expect(actual.submissions).toHaveLength(48); // technically depends on account config
@@ -134,7 +134,7 @@ describe("user galleries", () => {
       expect(actual.submissions).toEqual(
         expect.arrayContaining([
           expect.objectContaining(expectedFavesSubmission),
-        ])
+        ]),
       );
     });
 
@@ -150,7 +150,7 @@ describe("user galleries", () => {
             expect(submissions).toEqual(
               expect.arrayContaining([
                 expect.objectContaining(expectedFavesSubmission),
-              ])
+              ]),
             );
           }
 
@@ -162,7 +162,7 @@ describe("user galleries", () => {
 
         // Cut off early
         expect(pageCount).toEqual(3);
-      }
+      },
     );
   });
 
@@ -179,7 +179,7 @@ describe("user galleries", () => {
       expect(actual.previousPage).not.toEqual(expectedSelfLink);
 
       expect(actual.journals).toEqual(
-        expect.arrayContaining([expect.objectContaining(expectedJournal)])
+        expect.arrayContaining([expect.objectContaining(expectedJournal)]),
       );
     });
 
@@ -193,7 +193,9 @@ describe("user galleries", () => {
 
           if (pageCount === 2) {
             expect(journals).toEqual(
-              expect.arrayContaining([expect.objectContaining(expectedJournal)])
+              expect.arrayContaining([
+                expect.objectContaining(expectedJournal),
+              ]),
             );
           }
 
@@ -205,7 +207,7 @@ describe("user galleries", () => {
 
         // Cut off early
         expect(pageCount).toEqual(3);
-      }
+      },
     );
   });
 });

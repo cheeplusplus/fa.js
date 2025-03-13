@@ -12,13 +12,13 @@ describe("journal", () => {
     expect(actual.user_name).toEqual("Dragoneer");
     expect(actual.user_url).toEqual("/user/dragoneer/");
     expect(actual.user_thumb_url).toEqual(
-      `https://a.furaffinity.net/1668743460/dragoneer.gif`
+      `https://a.furaffinity.net/1668743460/dragoneer.gif`,
     );
     expect(actual.body_text).toEqual(
-      expect.stringContaining("As I said. Hell of a year.")
+      expect.stringContaining("As I said. Hell of a year."),
     );
     expect(actual.body_html).toEqual(
-      expect.stringContaining("As I said. Hell of a year.")
+      expect.stringContaining("As I said. Hell of a year."),
     );
     // 2022-01-24T19:43:00Z
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1643053380000));
