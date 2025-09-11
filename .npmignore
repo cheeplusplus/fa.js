@@ -1,6 +1,7 @@
 src/
 .vscode/
 fa_test*
+.*
 tsconfig.json
 tslint.json
 .env

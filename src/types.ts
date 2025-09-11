@@ -1,7 +1,11 @@
+import type * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
+
 // Type definitions
 
 export interface ClientConfig {
   cookies?: string;
+  timezone?: string;
   throwErrors?: boolean;
   disableRetry?: boolean;
   httpClient?: HttpClient;
@@ -38,7 +42,6 @@ export interface Comment extends CommentText {
   user_name: string;
   user_url: string;
   user_thumb_url: string;
-  timestamp: number;
   when: Date;
 }
 
@@ -48,7 +51,6 @@ export interface SubmissionListing {
   title: string;
   artist_name: string;
   thumb_url: string;
-  when: Date;
 }
 
 export interface Submissions {
@@ -103,7 +105,6 @@ export interface UserPage {
     self_link: string;
     // "title": string; // TODO: Pull these out of the page's submission_data variable
     thumb_url: string;
-    when: Date;
   }[];
   favorites: {
     id: number;
@@ -111,7 +112,6 @@ export interface UserPage {
     // "title": string;
     // "artist_name": string;
     thumb_url: string;
-    when: Date;
   }[];
   top_journal?: {
     id: number;
@@ -126,7 +126,6 @@ export interface UserPage {
     id: number;
     self_link: string;
     thumb_url: string;
-    when: Date;
   };
   artist_information: { title: string; value: string }[];
   contact_information: { service: string; link: string; value: string }[];
@@ -337,7 +336,7 @@ export interface TypedScrapeOptionList<T> {
   listItem: string;
   data?: TypedScrapeOptions<T>;
   convert?: (value: any) => any;
-  how?: string | ((element: cheerio.Selector) => any);
+  how?: string | ((element: cheerio.Cheerio<AnyNode>) => any);
 }
 
 // tslint:disable-next-line: array-type

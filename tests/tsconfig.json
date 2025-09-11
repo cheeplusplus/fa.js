@@ -11,10 +11,10 @@
         "inlineSourceMap": false,
         "sourceMap": true,
         "outDir": "build",
-        "baseUrl": ".",
-        "skipLibCheck": true
+        "baseUrl": "."
     },
     "include": [
-        "src/**/*"
+        "./**/*.spec.ts",
+        "../src/**/*"
     ]
 }

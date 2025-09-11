@@ -1,0 +1,50 @@
+name: Build package
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/**'
+      - 'tests/**'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 10 * * SUN'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: NPM cache
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install packages
+        run: npm ci
+      - name: Format check
+        run: npm run format:check
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm run test:coverage:ci
+        env:
+          FA_CLASSIC_COOKIES: ${{ secrets.FA_CLASSIC_COOKIES }}
+          FA_BETA_COOKIES: ${{ secrets.FA_BETA_COOKIES }}
+      - name: Test coverage comment
+        uses: MishaKav/jest-coverage-comment@v1

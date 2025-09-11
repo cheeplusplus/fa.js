@@ -1,4 +1,7 @@
+import type * as cheerio from "cheerio";
 import * as datefns from "date-fns";
+import { tz } from "@date-fns/tz";
+import type { AnyNode, Text } from "domhandler";
 import type { FAID } from "./types";
 
 const viewRegex = /\/view\/(\d+)/;
@@ -12,6 +15,7 @@ export const colonPreMatchRegex = /^(.*?):$/;
 
 const dateFormats = [
   "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
+  "MMMM d, yyyy, HH:mm:ss", // September 11, 2025, 01:16:19 (new)
   "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
   "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
 ];
@@ -23,8 +27,15 @@ export const SELECTOR_VIEW = 'a[href*="/view/"]';
 export const SELECTOR_JOURNAL = 'a[href*="/journal/"]';
 export const SELECTOR_THUMB = 'img[src*="//t.furaffinity.net/"]';
 
-function readDateWhenField(field: string): Date | null {
+export function readDateWhenField(
+  field: string,
+  timezone?: string
+): Date | null {
   if (!field) {
+    return null;
+  }
+  if (field.endsWith(" ago")) {
+    // Relative
     return null;
   }
 
@@ -35,8 +46,17 @@ function readDateWhenField(field: string): Date | null {
 
   // Try all known date formats
   for (const format of dateFormats) {
-    const parsedDate = datefns.parse(field, format, new Date());
-    if (datefns.isValid(parsedDate)) {
+    const parsedDate = datefns.parse(
+      field,
+      format,
+      new Date(),
+      timezone
+        ? {
+            in: tz(timezone),
+          }
+        : undefined
+    );
+    if (!Number.isNaN(parsedDate) && datefns.isValid(parsedDate)) {
       return parsedDate;
     }
   }
@@ -115,53 +135,46 @@ export function pickFigureId() {
   };
 }
 
-export function pickDateFromThumbnail(
-  selector: string = "img",
-  attr: string = "src"
-) {
+export function pickWhenFromSpan(selector: string, timezone?: string) {
   return {
     selector,
-    attr,
-    convert: (source: string) => {
-      const res = thumbnailRegex.exec(source);
-      if (!res || res.length < 4) {
-        return undefined;
-      }
-
-      const timestamp = parseInt(res[3], 10);
-      return new Date(timestamp * 1000);
-    },
-  };
-}
-
-export function pickWhenFromSpan(selector: string) {
-  return {
-    selector,
-    how: (source: cheerio.Selector) => {
-      // scrape-it has bad typings
-      const ss = source as unknown as cheerio.Cheerio;
-      const text = ss.text();
-      const title = ss.attr("title");
+    how: (source: cheerio.Cheerio<AnyNode>) => {
+      const text = source.text();
+      const title = source.attr("title");
 
       if (text) {
-        const textVal = readDateWhenField(text);
+        const textVal = readDateWhenField(text, timezone);
         if (textVal) {
           return textVal;
         }
       }
 
       if (title) {
-        const attrVal = ss.attr("title");
-        if (!attrVal) {
-          return null;
-        }
-
-        const titleVal = readDateWhenField(attrVal);
+        const titleVal = readDateWhenField(title, timezone);
         if (titleVal) {
           return titleVal;
         }
       }
 
+      return null;
+    },
+  };
+}
+
+export function pickFromTimestampData(
+  attr: string = "data-timestamp",
+  timezone?: string
+) {
+  return {
+    attr,
+    convert: (s: string) => {
+      const dt = datefns.fromUnixTime(
+        parseInt(s),
+        timezone ? { in: tz(timezone) } : undefined
+      );
+      if (!Number.isNaN(dt) && datefns.isValid(dt)) {
+        return dt;
+      }
       return null;
     },
   };
@@ -206,4 +219,9 @@ export function ensureIdIsNumber(id: FAID): number {
   }
 
   return parseInt(id, 10);
+}
+
+/** Skip over the first sub element of a node to get the text after it */
+export function readElementSkipContent(node: AnyNode): string | null {
+  return (node?.next as Text)?.data?.trim();
 }
