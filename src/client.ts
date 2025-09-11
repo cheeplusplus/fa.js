@@ -699,6 +699,7 @@ export class FurAffinityClient {
           },
           convert: (c: { value: string }) => c.value,
         },
+        meta_keywords: pickStaticValue(undefined),
         nav_items: {
           listItem: `#page-submission div.minigallery-container ${SELECTOR_VIEW}`,
           data: {
@@ -768,6 +769,13 @@ export class FurAffinityClient {
         ),
         keywords: {
           listItem: `#submission_page div.submission-sidebar section.tags-row > span.tags a[href*="/search/"]`,
+          data: {
+            value: "",
+          },
+          convert: (c: { value: string }) => c.value,
+        },
+        meta_keywords: {
+          listItem: `#submission_page div.submission-sidebar section.tags-row--meta > span.tags > span`,
           data: {
             value: "",
           },

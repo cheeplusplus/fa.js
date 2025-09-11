@@ -76,7 +76,8 @@ export interface Submission {
   body_text: string;
   body_html: string;
   when: Date;
-  keywords: string;
+  keywords: string[];
+  meta_keywords: string[] | undefined;
   nav_items: number[];
   comments: Comment[];
 }
