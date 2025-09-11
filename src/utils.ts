@@ -15,6 +15,7 @@ export const colonPreMatchRegex = /^(.*?):$/;
 
 const dateFormats = [
   "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
+  "MMMM d, yyyy, HH:mm:ss", // September 11, 2025, 01:16:19 (new)
   "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
   "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
 ];
@@ -31,6 +32,10 @@ export function readDateWhenField(
   timezone?: string
 ): Date | null {
   if (!field) {
+    return null;
+  }
+  if (field.endsWith(" ago")) {
+    // Relative
     return null;
   }
 
