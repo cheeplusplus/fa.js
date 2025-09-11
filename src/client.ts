@@ -737,7 +737,7 @@ export class FurAffinityClient {
               result = slink.attr("href");
             } else if (type === "music") {
               const slink = element.find(
-                ".audio-player-container audio.audio-player"
+                "audio"
               );
               result = slink.attr("src");
             } else if (type === "flash") {
