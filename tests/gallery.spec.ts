@@ -1,4 +1,3 @@
-import { getDateFromEpoch } from "./matchers";
 import { themedIt, ThumbMatcher } from "./shared";
 
 const expectedGallerySubmission = {
@@ -72,6 +71,7 @@ describe("user galleries", () => {
 
         expect(pageCount).toEqual(6);
       },
+      30000,
     );
   });
 

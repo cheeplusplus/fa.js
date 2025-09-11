@@ -28,6 +28,7 @@ function getClient(targetTheme: "classic" | "beta") {
 export function themedIt(
   description: string,
   callback: (client: FurAffinityClient, theme: "classic" | "beta") => any,
+  timeout?: number,
 ) {
   test.each([["classic"], ["beta"]])(
     `${description} (%s theme)`,
@@ -35,6 +36,7 @@ export function themedIt(
       const client = getClient(theme);
       return callback(client, theme);
     },
+    timeout,
   );
 }
 
