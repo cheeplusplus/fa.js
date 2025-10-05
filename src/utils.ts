@@ -16,6 +16,7 @@ export const colonPreMatchRegex = /^(.*?):$/;
 const dateFormats = [
   "MMM do, yyyy hh:mm aa", // Sep 27th, 2021 06:16 AM (standard)
   "MMMM d, yyyy, HH:mm:ss", // September 11, 2025, 01:16:19 (new)
+  "MMMM d, yyyy hh:mm:ss aa", // September 11, 2025 01:16:19 AM (new 2)
   "MMM do, yyyy, hh:mm aa", // Sep 27th, 2021, 06:16 AM (beta note)
   "MMM do, yyyy hh:mmaa", // Sep 27, 2021 06:16AM (beta note list)
 ];
