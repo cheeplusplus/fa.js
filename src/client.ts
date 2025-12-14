@@ -1003,7 +1003,7 @@ export class FurAffinityClient {
       beta: {
         id: pickStaticValue(ensureIdIsNumber(id)),
         self_link: pickStaticValue(path),
-        title: ".content .section-header h2.journal-title",
+        title: "#c-journalTitleTop__subject h3",
         user_name: `userpage-nav-header > userpage-nav-user-details ${SELECTOR_USER} span.js-displayName`,
         user_url: pickLink(
           `userpage-nav-header > userpage-nav-avatar > ${SELECTOR_USER}.current`
@@ -1016,7 +1016,7 @@ export class FurAffinityClient {
           selector: ".content .journal-item div.journal-content",
           how: "html",
         },
-        when: this.pickWhenFromSpan(".content .section-header span.popup_date"),
+        when: this.pickWhenFromSpan("#c-journalTitleTop__date span.popup_date"),
         comments: this.getCommentsObj("#comments-journal", "beta"),
       },
     });

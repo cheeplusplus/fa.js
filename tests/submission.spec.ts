@@ -27,7 +27,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a submission for integration testing <a class="auto_link named_url external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account and art belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, the artist of the work is <a href="/user/tinderhoof" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif" align="middle" title="tinderhoof" alt="tinderhoof">&nbsp;tinderhoof</a>. <a class="auto_link named_url" href="https://www.furaffinity.net/view/23617101/">Original upload is here</a>`,
+      `This is a submission for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account and art belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, the artist of the work is <a href="/user/tinderhoof" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif" align="middle" title="tinderhoof" alt="tinderhoof">&nbsp;tinderhoof</a>. <a class="auto_link " href="https://www.furaffinity.net/view/23617101/">Original upload is here</a>`,
     );
     // 2024-10-26T22:36:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007360000));
@@ -66,7 +66,7 @@ describe("submission", () => {
           user_url: "/user/andrewneo/",
           user_thumb_url: "https://a.furaffinity.net/1563504911/andrewneo.gif",
           body_text: "This is a second top level comment with some bbcode",
-          body_html: `This is a second top level comment <strong class="bbcode bbcode_b">with some bbcode</strong>`,
+          body_html: `This is a second top level comment <b class="bbcode bbcode_b">with some bbcode</b>`,
           // 2024-10-26T22:41:08
           when: getDateFromEpoch(1730007668000),
         },
@@ -108,7 +108,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a "story" for integration testing <a class="auto_link named_url external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was written by hand this time! &gt;:C`,
+      `This is a "story" for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was written by hand this time! &gt;:C`,
     );
     // 2024-10-26T22:45:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007900000));
@@ -140,7 +140,7 @@ describe("submission", () => {
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is audio for integration testing <a class="auto_link named_url external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`,
+      `This is audio for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`,
     );
     // 2024-10-26T22:54:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730008440000));
