@@ -25,12 +25,12 @@ describe("user", () => {
       // Note: the classic theme has extra crap - eventually this should get cleaned up
       expect(normalize(actual.header_text)).toEqual(
         expect.stringContaining(
-          `This is a read-only test account for FA.js Maintained by andrewneo`,
+          `This is a read-only test account for FA.js Maintained by Kauko`,
         ),
       );
       expect(normalize(actual.header_html)).toEqual(
         expect.stringContaining(
-          `This is a read-only test account for <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">FA.js</a><br> <br> Maintained by <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>`,
+          `This is a read-only test account for <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">FA.js</a>`,
         ),
       );
       // these aren't parsed so just make sure we're in the right place

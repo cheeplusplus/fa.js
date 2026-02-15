@@ -23,11 +23,11 @@ describe("submission", () => {
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
-      `This is a submission for integration testing fa.js This account and art belongs to andrewneo, the artist of the work is tinderhoof. Original upload is here`,
+      `This is a submission for integration testing fa.js This account and art belongs to Kauko, the artist of the work is Tinderhoof. Original upload is here`,
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a submission for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account and art belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, the artist of the work is <a href="/user/tinderhoof" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/tinderhoof.gif" align="middle" title="tinderhoof" alt="tinderhoof">&nbsp;tinderhoof</a>. <a class="auto_link " href="https://www.furaffinity.net/view/23617101/">Original upload is here</a>`,
+      `This is a submission for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account and art belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/1563504911/andrewneo.gif" title="andrewneo" alt="andrewneo">&nbsp;<span class="c-usernameBlockSimple username-underlined"><span class="c-usernameBlockSimple__displayName" title=" andrewneo ">Kauko</span></span></a>, the artist of the work is <a href="/user/tinderhoof" class="iconusername"><img src="//a.furaffinity.net/1765774950/tinderhoof.gif" title="tinderhoof" alt="tinderhoof">&nbsp;<span class="c-usernameBlockSimple username-underlined"><span class="c-usernameBlockSimple__displayName" title=" tinderhoof ">Tinderhoof</span></span></a>. <a class="auto_link " href="https://www.furaffinity.net/view/23617101/">Original upload is here</a>`,
     );
     // 2024-10-26T22:36:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007360000));
@@ -104,11 +104,11 @@ describe("submission", () => {
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
-      `This is a "story" for integration testing fa.js This account belongs to andrewneo, this writing was written by hand this time! >:C`,
+      `This is a "story" for integration testing fa.js This account belongs to Kauko, this writing was written by hand this time! >:C`,
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is a "story" for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this writing was written by hand this time! &gt;:C`,
+      `This is a "story" for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/1563504911/andrewneo.gif" title="andrewneo" alt="andrewneo">&nbsp;<span class="c-usernameBlockSimple username-underlined"><span class="c-usernameBlockSimple__displayName" title=" andrewneo ">Kauko</span></span></a>, this writing was written by hand this time! &gt;:C`,
     );
     // 2024-10-26T22:45:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730007900000));
@@ -136,11 +136,11 @@ describe("submission", () => {
     );
     const normalizedBody = actual.body_text.replace(/\s+/g, " ");
     expect(normalizedBody).toEqual(
-      `This is audio for integration testing fa.js This account belongs to andrewneo, this recording was recorded by Kauko.`,
+      `This is audio for integration testing fa.js This account belongs to Kauko, this recording was recorded by Kauko.`,
     );
     const normalizedHtml = actual.body_html.replace(/\s+/g, " ");
     expect(normalizedHtml).toEqual(
-      `This is audio for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/${liveThumbDateStr}/andrewneo.gif" align="middle" title="andrewneo" alt="andrewneo">&nbsp;andrewneo</a>, this recording was recorded by Kauko.`,
+      `This is audio for integration testing <a class="auto_link external" href="https://github.com/cheeplusplus/fa.js" rel="nofollow ugc noreferrer noopener">fa.js</a><br> <br> This account belongs to <a href="/user/andrewneo" class="iconusername"><img src="//a.furaffinity.net/1563504911/andrewneo.gif" title="andrewneo" alt="andrewneo">&nbsp;<span class="c-usernameBlockSimple username-underlined"><span class="c-usernameBlockSimple__displayName" title=" andrewneo ">Kauko</span></span></a>, this recording was recorded by Kauko.`,
     );
     // 2024-10-26T22:54:00
     expect(actual.when).toBeWithinOneMinuteOf(getDateFromEpoch(1730008440000));
